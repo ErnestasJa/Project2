@@ -3,22 +3,22 @@
 #include "voxel/CollisionManager.h"
 #include <core/AxisAlignedBoundingBox.h>
 #include <glm/geometric.hpp>
-#include <float.h>
-#include <stdio.h>
-
-#define GRAVITY_CONSTANT -0.5
-#define JUMP_VELOCITY_CONSTANT 40
 
 namespace game {
-Player::Player(core::SharedPtr<render::ICamera> cam, CollisionManager *octree, glm::vec3 position,
-               float width, float height, glm::vec3 eyeOffset) {
+static constexpr float GRAVITY_CONSTANT = -9.8f;
+static constexpr float TERMINAL_VELOCITY = -20.0f;
+
+Player::Player(core::SharedPtr<render::ICamera> cam, CollisionManager *octree,
+               glm::vec3 position, float width, float height,
+               glm::vec3 eyeOffset) {
   m_octree = octree;
   m_cam = cam;
   m_eyeOffset = eyeOffset;
   m_position = position;
-  m_aabb = core::AxisAlignedBoundingBox(glm::vec3(0,0,0), glm::vec3(width/2.0f, height/2.0f, width/2.0f));
+  m_aabb = core::AxisAlignedBoundingBox(
+      glm::vec3(0, 0, 0), glm::vec3(width / 2.0f, height / 2.0f, width / 2.0f));
   m_onGround = false;
-  m_flyEnabled = true;
+  m_flyEnabled = false;
 }
 
 Player::~Player() {
@@ -38,20 +38,28 @@ const core::AxisAlignedBoundingBox &Player::GetAABB() { return m_aabb; }
 void Player::Update(float timeStep) {
 
   if (m_flyEnabled == false) {
-    ApplyGravity();
+    m_velocity += glm::vec3(0, GRAVITY_CONSTANT, 0);
+
+    if (m_velocity.y < -50.0f)
+      m_velocity.y = -50;
 
     if (m_onGround)
       m_velocity.y = 0;
 
     IsSweptColliding(timeStep);
 
-    if (!m_onGround && IsOnGround()) // we just fell down, unstuck from ground
-    {
+    if (!m_onGround && IsOnGround()) {
       m_onGround = true;
-    } else if (m_onGround && !IsOnGround())
+    } else if (m_onGround && !IsOnGround()) {
       m_onGround = false;
+    }
   } else {
     glm::vec3 velocity = m_velocity * timeStep;
+
+    if (velocity.y < TERMINAL_VELOCITY) {
+      velocity.y = TERMINAL_VELOCITY;
+    }
+
     m_position = (m_position + velocity);
   }
 
@@ -62,22 +70,16 @@ void Player::SetFlyEnabled(bool enabled) { m_flyEnabled = enabled; }
 
 bool Player::GetFlyEnabled() { return m_flyEnabled; }
 
-void Player::ApplyGravity() {
-  m_velocity += glm::vec3(0, GRAVITY_CONSTANT, 0);
-
-  if (m_velocity.y < -50)
-    m_velocity.y = -50;
-}
-
 bool Player::Jump(float velocity) {
   if (m_onGround) {
+    elog::LogInfo(core::string::CFormat("ground %i", 1));
     m_position.y += 0.01;
-    m_velocity.y = JUMP_VELOCITY_CONSTANT;
+    m_velocity.y = velocity;
     m_onGround = false;
   }
 }
 
-bool Player::OnGround() { return m_onGround; }
+bool Player::OnGround() const { return m_onGround; }
 
 bool Player::IsOnGround() {
   auto pos = this->m_position;

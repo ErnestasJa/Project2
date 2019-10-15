@@ -13,6 +13,9 @@
 #include <iostream>
 #include <platform/IPlatformFileSystem.h>
 #include <util/Timer.h>
+#include "input/GameInputHandler.h"
+
+void HandlePlayerInput(game::Player* player, input::GameInputHandler* inputHandler, float delta);
 
 int main() {
   std::cout << "Initializing..." << std::endl;
@@ -47,23 +50,16 @@ int main() {
   }
 
 
-  auto camera = core::MakeShared<render::PerspectiveCamera>(16.0 / 9.0, 45.0f);
 
-  window->GetInputDevice().lock()->AddInputHandler(
-      input::CamInputHandler::Create(camera));
   window->SetCursorMode(render::CursorMode::HiddenCapture);
 
   renderer->SetClearColor({155, 0, 155});
 
   auto imgLoader = core::MakeUnique<res::ImageLoader>(fsPtr, renderer);
   auto renderContext = renderer->GetRenderContext();
-  renderContext->SetCurrentCamera(camera);
 
   auto texture = imgLoader->LoadImage(io::Path("resources/textures/grass.png"));
   material->SetTexture(0, texture.get());
-
-  camera->SetPosition({40,40,40});
-  camera->SetRotation({0,glm::radians(-89.0f),0});
 
   auto octree= core::MakeShared<MortonOctTree>();
   auto vmgr = core::MakeUnique<VoxMeshManager>(renderer, octree, 5);
@@ -78,8 +74,8 @@ int main() {
   double octaves = 1.0;
   double rgb_octaves = 4.0;
 
-  for(int x = 0; x < 512; x++) {
-    for (int z = 0; z < 512; z++) {
+  for(int x = 0; x < 60; x++) {
+    for (int z = 0; z < 60; z++) {
       int val = 64.0 * schnozer.octaveNoise0_1(((double)x) / freq, ((double)z)/freq, octaves);
 
       uint8_t r = rgb_schnozer.octaveNoise0_1(x/ rgb_freq,z/rgb_freq, rgb_octaves) *255.0;
@@ -106,9 +102,6 @@ int main() {
 
   elog::LogInfo(core::string::CFormat("Added %i nodes. Took %i ms", nodeCount, msElapsed));
 
-  auto collisionManager = new CollisionManager(octree);
-  auto player = new game::Player(camera, collisionManager, glm::vec3(3, 3, 3));
-
   auto meshes = vmgr->GetMeshes();
   for(auto mesh: meshes) {
     uint32_t x, y, z;
@@ -116,7 +109,56 @@ int main() {
     elog::LogInfo(core::string::CFormat("Chunk position [%i][%i][%i]", x,y,z));
   }
 
+
+  auto collisionManager = new CollisionManager(octree);
+
+  auto camera = core::MakeShared<render::PerspectiveCamera>(16.0 / 9.0, 45.0f);
+  camera->SetPosition({40,40,40});
+  camera->SetRotation({0,glm::radians(-89.0f),0});
+  renderContext->SetCurrentCamera(camera);
+
+  auto player = core::MakeUnique<game::Player>(camera, collisionManager, glm::vec3(100, 68, 100));
+  auto gameInputHandler = core::MakeShared<input::GameInputHandler>();
+
+  core::pod::Vec2<int32_t> m_mouseOld={0,0};
+  core::pod::Vec2<int32_t> m_mouseNew={0,0};
+
+  gameInputHandler->SetMouseMoveHandler([&](int32_t x, int32_t y){
+    const float MouseSpeed = 0.01;
+    m_mouseOld = m_mouseNew;
+    m_mouseNew = {x, y};
+
+    auto rot = camera->GetRotation();
+
+    rot.x -= ((float)(m_mouseNew.x - m_mouseOld.x)) * MouseSpeed;
+    rot.y -= ((float)(m_mouseNew.y - m_mouseOld.y)) * MouseSpeed;
+
+    rot.y = glm::clamp(rot.y, glm::radians(-89.0f), glm::radians(89.0f));
+
+    camera->SetRotation(rot);
+  });
+
+  context.get()->GetWindow()->GetInputDevice().lock()->AddInputHandler(
+      gameInputHandler);
+
+  static const int PhysicsUpdateRateInMilliseconds = 16;
+
+  player->SetFlyEnabled(true);
+  timer.Start();
+
+
   while (window->ShouldClose() == false) {
+    auto delta_ms = timer.MilisecondsElapsed();
+    float delta_seconds = ((float)delta_ms) / 1000.f;
+
+    HandlePlayerInput(player.get(), gameInputHandler.get(), delta_seconds);
+
+    if(delta_ms >= PhysicsUpdateRateInMilliseconds) {
+      timer.Start();
+      player->Update(delta_seconds);
+      /*elog::LogInfo(core::string::CFormat("Delta %.4f s, Player location [ %.2f | %.2f | %.2f ], ground = %i",
+          delta_seconds,  player->GetPosition().x, player->GetPosition().y, player->GetPosition().z, (int)player->OnGround()));*/
+    }
 
     renderer->BeginFrame();
 
@@ -134,4 +176,70 @@ int main() {
   }
 
   return 0;
+}
+
+static float speed = 25.0;
+
+void HandlePlayerInput(game::Player* player, input::GameInputHandler* inputHandler, float delta)
+{
+  auto look = player->GetCamera()->GetLocalZ();
+  auto right = player->GetCamera()->GetLocalX();
+
+  look = glm::normalize(look);
+  right = glm::normalize(right);
+
+  auto wk = inputHandler->IsKeyDown(input::Keys::W);
+  auto sk = inputHandler->IsKeyDown(input::Keys::S);
+  auto dk = inputHandler->IsKeyDown(input::Keys::D);
+  auto ak = inputHandler->IsKeyDown(input::Keys::A);
+
+  glm::vec3 forwardVelocity(0), strafeVelocity(0);
+
+  if (wk)
+  {
+    forwardVelocity.x = look.x;
+    forwardVelocity.z = look.z;
+  }
+  else if (sk)
+  {
+    forwardVelocity.x = -look.x;
+    forwardVelocity.z = -look.z;
+  }
+
+  if (dk)
+  {
+    strafeVelocity.x = right.x;
+    strafeVelocity.z = right.z;
+  }
+  else if (ak)
+  {
+    strafeVelocity.x = -right.x;
+    strafeVelocity.z = -right.z;
+  }
+
+  if(inputHandler->IsKeyDown(input::Keys::F)){
+    player->SetFlyEnabled(!player->GetFlyEnabled());
+  }
+
+  if(inputHandler->IsKeyDown(input::Keys::Space)){
+    player->Jump(60.0f);
+  }
+  bool anyDirectionKeyPressed = wk | ak | sk | dk;
+
+  if(anyDirectionKeyPressed){
+    auto sum = forwardVelocity + strafeVelocity;
+    sum.y = 0;
+    auto direction = glm::normalize(sum);
+    auto totalVelocity = direction * speed;
+
+    player->GetVelocity().x = totalVelocity.x;
+    player->GetVelocity().z = totalVelocity.z;
+  }
+
+  if (!anyDirectionKeyPressed && (player->OnGround() || player->GetFlyEnabled()))
+  {
+    player->GetVelocity().x = 0;
+    player->GetVelocity().z = 0;
+    if(player->GetFlyEnabled()) player->GetVelocity().y = 0;
+  }
 }
