@@ -1,7 +1,7 @@
 #ifndef EVOXEL_SIDE_H
 #define EVOXEL_SIDE_H
 
-#include "utils/Bit.h"
+#include "util/Bit.h"
 #include <glm/fwd.hpp>
 
 enum VoxelSide

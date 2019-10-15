@@ -1,7 +1,6 @@
 #ifndef COLLISION_INFO_H
 #define COLLISION_INFO_H
 
-#include "utility/Vector.h"
 #include "MNode.h"
 
 struct CollisionInfo
@@ -18,7 +17,5 @@ struct AABBCollisionInfo
     float time;
     glm::vec3 normal;
 };
-
-typedef vector<AABBCollisionInfo> CollisionInfoVector;
 
 #endif

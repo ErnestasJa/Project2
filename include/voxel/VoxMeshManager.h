@@ -3,7 +3,7 @@
 
 #include "MortonOctree.h"
 #include "render/BaseMesh.h"
-#include "utils/Bit.h"
+#include "util/Bit.h"
 #include <unordered_map>
 
 typedef std::unordered_map<uint32_t, core::SharedPtr<render::BaseMesh>>::iterator MapIterator;

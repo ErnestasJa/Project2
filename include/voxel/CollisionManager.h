@@ -1,12 +1,12 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
-#include "utility/Vector.h"
+namespace core {
+class AxisAlignedBoundingBox;
+}
 
-class AABB;
 struct CollisionInfo;
 struct AABBCollisionInfo;
-typedef vector<AABBCollisionInfo> CollisionInfoVector;
 class MortonOctTree;
 typedef std::shared_ptr<MortonOctTree> MortonOctTreePtr;
 
@@ -19,9 +19,9 @@ class CollisionManager
         virtual ~CollisionManager();
 
     	bool CheckCollision(const glm::vec3 & bmin, const glm::vec3 & bmax, const glm::vec3 & rayStart, const glm::vec3 & rayDirectionInverse);
-    	bool CheckCollision(const AABB & aabb);
-    	bool CheckCollisionB(const AABB & aabb);
-    	CollisionInfoVector CheckCollisionSwept(const AABB & aabb, const glm::vec3 & vel);
+    	bool CheckCollision(const core::AxisAlignedBoundingBox & aabb);
+    	bool CheckCollisionB(const core::AxisAlignedBoundingBox & aabb);
+        core::Vector<AABBCollisionInfo> CheckCollisionSwept(const core::AxisAlignedBoundingBox & aabb, const glm::vec3 & vel);
     	void Collide(CollisionInfo & colInfo, uint32_t depthLevel, const glm::ivec3 & octStart);
     	VoxelSide GetCollisionSide(glm::vec3 voxPos, glm::vec3 rayStart,  glm::vec3 rayDirection);
 

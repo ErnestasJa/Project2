@@ -1,5 +1,5 @@
 #include "voxel/MortonOctree.h"
-#include <utils/Bit.h>
+#include <util/Bit.h>
 
 namespace {
 inline bool NodeSortPredicate(const MNode &i, const MNode &j) {

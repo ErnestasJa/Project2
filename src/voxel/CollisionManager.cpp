@@ -1,10 +1,10 @@
-#include "Precomp.h"
-#include "utility/Vector.h"
-#include "opengl/AABB.h"
-#include "CollisionInfo.h"
-#include "MortonOctree.h"
-#include "CollisionManager.h"
-
+#include "voxel/CollisionManager.h"
+#include "core/AxisAlignedBoundingBox.h"
+#include "voxel/CollisionInfo.h"
+#include "voxel/MortonOctree.h"
+#include "util/Numeric.h"
+#include <glm/common.hpp>
+#include <glm/gtx/norm.hpp>
 
 CollisionManager::CollisionManager(MortonOctTreePtr octree)
 {
@@ -40,9 +40,9 @@ bool CollisionManager::CheckCollision(const glm::vec3 & bmin, const glm::vec3 & 
     return tmax >= tmin;
 }
 
-bool CollisionManager::CheckCollision(const AABB & aabb)
+bool CollisionManager::CheckCollision(const core::AxisAlignedBoundingBox & aabb)
 {
-	vector<MNode> & m_nodes = m_octree->GetChildNodes();
+    core::Vector<MNode> & m_nodes = m_octree->GetChildNodes();
 
     auto clamp = [] (float & x)
     {
@@ -62,11 +62,11 @@ bool CollisionManager::CheckCollision(const AABB & aabb)
     clampVec(min);
     clampVec(max);
 
-    uint32_t mortonMin = encodeMK(comp(min));
-    uint32_t mortonMax = encodeMK(comp(max));
+    uint32_t mortonMin = encodeMK(min.x, min.y, min.z);
+    uint32_t mortonMax = encodeMK(max.x, max.y, max.z);
 
-    auto low = boost::range::lower_bound(m_nodes,MNode(mortonMin));
-    auto hi  = boost::range::lower_bound(m_nodes,MNode(mortonMax));
+    auto low = std::lower_bound(m_nodes.begin(), m_nodes.end(),MNode(mortonMin));
+    auto hi  = std::lower_bound(m_nodes.begin(), m_nodes.end(),MNode(mortonMax));
 
     if(hi!=m_nodes.end())
         hi++;
@@ -88,9 +88,9 @@ bool CollisionManager::CheckCollision(const AABB & aabb)
     return false;
 }
 
-bool CollisionManager::CheckCollisionB(const AABB & aabb)
+bool CollisionManager::CheckCollisionB(const core::AxisAlignedBoundingBox & aabb)
 {
-	vector<MNode> & m_nodes = m_octree->GetChildNodes();
+    core::Vector<MNode> & m_nodes = m_octree->GetChildNodes();
 
     auto clamp = [] (float & x)
     {
@@ -113,21 +113,21 @@ bool CollisionManager::CheckCollisionB(const AABB & aabb)
     for(uint32_t z = min.z; z < max.z; z++)
         for(uint32_t y = min.y; y < max.y; y++)
             for(uint32_t x = min.x; x < max.x; x++)
-	      if(boost::range::binary_search(m_nodes,MNode(x,y,z)))
+	      if(std::binary_search(m_nodes.begin(), m_nodes.end(), MNode(x,y,z)))
 		return true;
 	      
     return false;
 }
 
-static inline AABB BroadphaseAABB(const AABB & box, const glm::vec3 & vel)
+static inline core::AxisAlignedBoundingBox BroadphaseAABB(const core::AxisAlignedBoundingBox & box, const glm::vec3 & vel)
 {
   auto hvel = vel*0.5f;
   auto center = box.GetCenter()+hvel;
   auto size = box.GetHalfSize()+glm::abs(hvel);
-  return AABB(center,size);
+  return core::AxisAlignedBoundingBox(center,size);
 }
 
-CollisionInfoVector CollisionManager::CheckCollisionSwept(const AABB & aabb, const glm::vec3 & vel)
+core::Vector<AABBCollisionInfo> CollisionManager::CheckCollisionSwept(const core::AxisAlignedBoundingBox & aabb, const glm::vec3 & vel)
 {
     /*auto printAABB = [](const std::string & name, const AABB & bb)
     {
@@ -137,9 +137,9 @@ CollisionInfoVector CollisionManager::CheckCollisionSwept(const AABB & aabb, con
     };*/
 
 
-	vector<MNode> & m_nodes = m_octree->GetChildNodes();
+   core::Vector<MNode> & m_nodes = m_octree->GetChildNodes();
 
-    CollisionInfoVector infoVec;
+  core::Vector<AABBCollisionInfo>  infoVec;
 
     auto clamp = [] (float & x)
     {
@@ -169,9 +169,9 @@ CollisionInfoVector CollisionManager::CheckCollisionSwept(const AABB & aabb, con
     for(uint32_t z = min.z; z < max.z; z++)
     for(uint32_t y = min.y; y < max.y; y++)
     for(uint32_t x = min.x; x < max.x; x++)
-        if(boost::range::binary_search(m_nodes,MNode(x,y,z)))
+        if(std::binary_search(m_nodes.begin(), m_nodes.end(),MNode(x,y,z)))
         {
-            AABB b1(glm::vec3(x+0.5,y+0.5,z+0.5),glm::vec3(0.5,0.5,0.5));
+            core::AxisAlignedBoundingBox b1(glm::vec3(x+0.5,y+0.5,z+0.5),glm::vec3(0.5,0.5,0.5));
             AABBCollisionInfo info;
             info.time = aabb.SweepCollidesWith(b1,vel,normalOut);
 
@@ -218,7 +218,7 @@ void CollisionManager::Collide(CollisionInfo & colInfo, uint32_t depthLevel, con
 
     return;
 }
-
+#include <glm/gtx/norm.hpp>
 static bool IsRayIntersectingTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 normal, glm::vec3 rayStart,  glm::vec3 rayDirection)
 {
     if(glm::dot(normal, rayDirection)>0.0f)
@@ -231,7 +231,7 @@ static bool IsRayIntersectingTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm
     P = glm::cross(rayDirection, ac);
     det = glm::dot(ab,P);
 
-    if(helpers::equals(det,0.0f))
+    if(util::numeric::equals(det,0.0f))
         return false;
 
     inv_det = 1.f / det;
@@ -247,7 +247,7 @@ static bool IsRayIntersectingTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm
 
     t = glm::dot(ac, Q) * inv_det;
 
-    return t > ROUNDING_ERROR;
+    return t > util::numeric::FloatingPointRoundingError;
 }
 
 VoxelSide CollisionManager::GetCollisionSide(glm::vec3 voxPos, glm::vec3 rayStart,  glm::vec3 rayDirection)

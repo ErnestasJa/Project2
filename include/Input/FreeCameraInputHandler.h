@@ -2,7 +2,8 @@
 #define THEPROJECT2_INCLUDE_INPUT_FREECAMERAINPUTHANDLER_H_
 
 #include "glm/glm.hpp"
-#include "render/ICamera.h"
+#include "input/InputInc.h"
+#include "render/PerspectiveCamera.h"
 
 namespace input {
 class CamInputHandler : public input::InputHandler {

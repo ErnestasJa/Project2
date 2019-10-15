@@ -2,14 +2,17 @@ cmake_minimum_required (VERSION 3.0)
 project(TheProject2)
 
 
-set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -g -O1 -w -std=c++17 -include EngineInc.h")
-set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /MP /O2 /W3 /FIEngineInc.h")
+set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Os -O3 -w -std=c++17 -include EngineInc.h")
+set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /MP /O3 /W3 /FIEngineInc.h")
 
 #Only supporting gcc on linux, mingw(gcc)/nmake on windows
 if(WIN32 AND NOT MINGW)
     set(CMAKE_CXX_FLAGS "${CPP_NMAKE_COMPILE_FLAGS}")
+    message(STATUS "Using nmake build flags")
 else()
     set(CMAKE_CXX_FLAGS "${CPP_GCC_COMPILE_FLAGS}")
+    message(STATUS "Using gcc build flags")
+    message(STATUS "Build flags: ${CPP_GCC_COMPILE_FLAGS}")
 endif()
 
 set(SRC_PATH "src")
@@ -30,7 +33,9 @@ set(PROJECT_SOURCES
         "${SRC_PATH}/voxel/MNodeUtil.cpp"
         "${SRC_PATH}/voxel/MortonOctree.cpp"
         "${SRC_PATH}/voxel/VoxMeshManager.cpp"
-        include/utils/Noise.h)
+        "${SRC_PATH}/voxel/CollisionManager.cpp"
+        "${SRC_PATH}/core/AxisAlignedBoundingBox.cpp"
+        "${SRC_PATH}/game/Player.cpp")
 
 
 include_directories (${INCLUDE_PATH})

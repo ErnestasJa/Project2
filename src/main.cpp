@@ -1,16 +1,18 @@
 #include "geometry/SimpleGeometry.h"
+#include "input/FreeCameraInputHandler.h"
 #include "input/InputInc.h"
 #include "render/BaseMaterial.h"
 #include "render/RenderInc.h"
 #include "resource_management/GpuProgramManager.h"
 #include "resource_management/ImageLoader.h"
+#include "util/Noise.h"
+#include "voxel/VoxMeshManager.h"
 #include "window/WindowInc.h"
 #include <filesystem/IFileSystem.h>
+#include <game/Player.h>
 #include <iostream>
 #include <platform/IPlatformFileSystem.h>
-#include "input/FreeCameraInputHandler.h"
-#include "voxel/VoxMeshManager.h"
-#include "utils/Noise.h"
+#include <util/Timer.h>
 
 int main() {
   std::cout << "Initializing..." << std::endl;
@@ -70,6 +72,7 @@ int main() {
   siv::PerlinNoise rgb_schnozer(2546);
   int nodeCount = 0;
 
+
   double freq = 64.0;
   double rgb_freq = 32.0;
   double octaves = 1.0;
@@ -91,11 +94,20 @@ int main() {
     }
   }
 
-  elog::LogInfo(core::string::CFormat("Added %i nodes.", nodeCount));
+
 
   octree->SortLeafNodes();
+
+  util::Timer timer;
+  timer.Start();
   vmgr->GenAllChunks();
 
+  auto msElapsed = timer.MilisecondsElapsed();
+
+  elog::LogInfo(core::string::CFormat("Added %i nodes. Took %i ms", nodeCount, msElapsed));
+
+  auto collisionManager = new CollisionManager(octree);
+  auto player = new game::Player(camera, collisionManager, glm::vec3(3, 3, 3));
 
   auto meshes = vmgr->GetMeshes();
   for(auto mesh: meshes) {
