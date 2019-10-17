@@ -1,7 +1,6 @@
 #ifndef MORTONOCTTREE_H
 #define	MORTONOCTTREE_H
 
-#include "Morton.h"
 #include "MNode.h"
 #include "OctreeConstants.h"
 #include "VoxelSide.h"

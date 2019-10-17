@@ -4,9 +4,7 @@ namespace input {
 
 GameInputHandler::GameInputHandler() {
   const int maxKeys = 200;
-  auto keyStates = core::UniquePtr<int>(new int[maxKeys]);
-
-  m_keyStates = core::Move(keyStates);
+  m_keyStates = core::UniquePtr<int>(new int[maxKeys]);
   for(int i = 0; i < e_input::Keys::Unknown.GetId() + 1; i++){
     m_keyStates.get()[i] = false;
   }

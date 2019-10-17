@@ -1,4 +1,5 @@
 #include "voxel/MortonOctree.h"
+#include "voxel/Morton.h"
 #include <util/Bit.h>
 
 namespace {

@@ -2,6 +2,7 @@
 #include "core/AxisAlignedBoundingBox.h"
 #include "voxel/CollisionInfo.h"
 #include "voxel/MortonOctree.h"
+#include "voxel/Morton.h"
 #include "util/Numeric.h"
 #include <glm/common.hpp>
 #include <glm/gtx/norm.hpp>

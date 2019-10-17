@@ -6,6 +6,7 @@
 #include "resource_management/GpuProgramManager.h"
 #include "resource_management/ImageLoader.h"
 #include "util/Noise.h"
+#include "voxel/Morton.h"
 #include "voxel/VoxMeshManager.h"
 #include "window/WindowInc.h"
 #include <filesystem/IFileSystem.h>
@@ -74,9 +75,9 @@ int main() {
   double octaves = 1.0;
   double rgb_octaves = 4.0;
 
-  for(int x = 0; x < 60; x++) {
-    for (int z = 0; z < 60; z++) {
-      int val = 64.0 * schnozer.octaveNoise0_1(((double)x) / freq, ((double)z)/freq, octaves);
+  for(int x = 0; x < 512; x++) {
+    for (int z = 0; z < 512; z++) {
+      int val = 96.0 * schnozer.octaveNoise0_1(((double)x) / freq, ((double)z)/freq, octaves);
 
       uint8_t r = rgb_schnozer.octaveNoise0_1(x/ rgb_freq,z/rgb_freq, rgb_octaves) *255.0;
       uint8_t g = rgb_schnozer.octaveNoise0_1(z/ rgb_freq,x/rgb_freq, rgb_octaves) *255.0;
@@ -95,29 +96,26 @@ int main() {
   octree->SortLeafNodes();
 
   util::Timer timer;
+
   timer.Start();
   vmgr->GenAllChunks();
-
-  auto msElapsed = timer.MilisecondsElapsed();
-
-  elog::LogInfo(core::string::CFormat("Added %i nodes. Took %i ms", nodeCount, msElapsed));
+  elog::LogInfo(core::string::CFormat("Added %i nodes. Took %i ms", nodeCount, timer.MilisecondsElapsed()));
 
   auto meshes = vmgr->GetMeshes();
   for(auto mesh: meshes) {
     uint32_t x, y, z;
     decodeMK(mesh.first, x, y, z);
-    elog::LogInfo(core::string::CFormat("Chunk position [%i][%i][%i]", x,y,z));
+    //elog::LogInfo(core::string::CFormat("Chunk position [%i][%i][%i]", x,y,z));
   }
 
 
   auto collisionManager = new CollisionManager(octree);
 
   auto camera = core::MakeShared<render::PerspectiveCamera>(16.0 / 9.0, 45.0f);
-  camera->SetPosition({40,40,40});
   camera->SetRotation({0,glm::radians(-89.0f),0});
   renderContext->SetCurrentCamera(camera);
 
-  auto player = core::MakeUnique<game::Player>(camera, collisionManager, glm::vec3(100, 68, 100));
+  auto player = core::MakeUnique<game::Player>(camera, collisionManager, glm::vec3(256, 68, 256), 1, 1.6);
   auto gameInputHandler = core::MakeShared<input::GameInputHandler>();
 
   core::pod::Vec2<int32_t> m_mouseOld={0,0};
@@ -156,8 +154,8 @@ int main() {
     if(delta_ms >= PhysicsUpdateRateInMilliseconds) {
       timer.Start();
       player->Update(delta_seconds);
-      /*elog::LogInfo(core::string::CFormat("Delta %.4f s, Player location [ %.2f | %.2f | %.2f ], ground = %i",
-          delta_seconds,  player->GetPosition().x, player->GetPosition().y, player->GetPosition().z, (int)player->OnGround()));*/
+      //elog::LogInfo(core::string::CFormat("Delta %.4f s, Player location [ %.2f | %.2f | %.2f ], ground = %i",
+      //    delta_seconds,  player->GetPosition().x, player->GetPosition().y, player->GetPosition().z, (int)player->OnGround()));
     }
 
     renderer->BeginFrame();
@@ -198,22 +196,26 @@ void HandlePlayerInput(game::Player* player, input::GameInputHandler* inputHandl
   if (wk)
   {
     forwardVelocity.x = look.x;
+    forwardVelocity.y = look.y;
     forwardVelocity.z = look.z;
   }
   else if (sk)
   {
     forwardVelocity.x = -look.x;
+    forwardVelocity.y = -look.y;
     forwardVelocity.z = -look.z;
   }
 
   if (dk)
   {
     strafeVelocity.x = right.x;
+    strafeVelocity.y = right.y;
     strafeVelocity.z = right.z;
   }
   else if (ak)
   {
     strafeVelocity.x = -right.x;
+    strafeVelocity.y = -right.y;
     strafeVelocity.z = -right.z;
   }
 
@@ -222,18 +224,18 @@ void HandlePlayerInput(game::Player* player, input::GameInputHandler* inputHandl
   }
 
   if(inputHandler->IsKeyDown(input::Keys::Space)){
-    player->Jump(60.0f);
+    player->Jump(30.0f);
   }
   bool anyDirectionKeyPressed = wk | ak | sk | dk;
 
   if(anyDirectionKeyPressed){
     auto sum = forwardVelocity + strafeVelocity;
-    sum.y = 0;
     auto direction = glm::normalize(sum);
     auto totalVelocity = direction * speed;
 
     player->GetVelocity().x = totalVelocity.x;
     player->GetVelocity().z = totalVelocity.z;
+    if(player->GetFlyEnabled()) player->GetVelocity().y = totalVelocity.y;
   }
 
   if (!anyDirectionKeyPressed && (player->OnGround() || player->GetFlyEnabled()))

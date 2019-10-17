@@ -6,7 +6,6 @@
 #include "core/AxisAlignedBoundingBox.h"
 
 namespace game {
-static glm::vec3 gGravity = glm::vec3(0, 1, 0);
 
 class Player {
 public:
@@ -21,9 +20,8 @@ public:
   core::SharedPtr<render::ICamera> GetCamera();
 
   void Update(float timeStep);
-  void ApplyGravity();
   bool Jump(float velocity);
-  bool OnGround();
+  bool OnGround() const;
 
   void SetFlyEnabled(bool enabled);
   bool GetFlyEnabled();

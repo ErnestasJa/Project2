@@ -5,7 +5,7 @@
 #include <glm/geometric.hpp>
 
 namespace game {
-static constexpr float GRAVITY_CONSTANT = -9.8f;
+static constexpr float GRAVITY_CONSTANT = -4.8f;
 static constexpr float TERMINAL_VELOCITY = -20.0f;
 
 Player::Player(core::SharedPtr<render::ICamera> cam, CollisionManager *octree,
@@ -72,11 +72,13 @@ bool Player::GetFlyEnabled() { return m_flyEnabled; }
 
 bool Player::Jump(float velocity) {
   if (m_onGround) {
-    elog::LogInfo(core::string::CFormat("ground %i", 1));
     m_position.y += 0.01;
     m_velocity.y = velocity;
     m_onGround = false;
+    //elog::LogInfo(core::string::CFormat("ground %i", 1));
+    return true;
   }
+  return false;
 }
 
 bool Player::OnGround() const { return m_onGround; }
@@ -120,12 +122,9 @@ bool SortCollisions(AABBCollisionInfo &a, AABBCollisionInfo &b) {
 x) Handle precission errors
 **/
 
-uint32_t MAX_ITERATIONS = 20;
+int MAX_ITERATIONS = 20;
 bool Player::IsSweptColliding(float timeStep) {
   /// for decoding voxel coordinates
-  uint32_t x1, y1, z1;
-  uint32_t x2, y2, z2;
-
   glm::vec3 velocity = m_velocity * timeStep;
 
   for (int i = 0; i < MAX_ITERATIONS; ++i) {
@@ -138,7 +137,7 @@ bool Player::IsSweptColliding(float timeStep) {
     auto collisions = m_octree->CheckCollisionSwept(g, velocity);
     std::sort(collisions.begin(), collisions.end(), SortCollisions);
 
-    if (collisions.size() == 0) {
+    if (collisions.empty()) {
       m_position += velocity;
       return false;
     }

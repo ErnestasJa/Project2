@@ -117,54 +117,54 @@ static const uint32_t mortonkeyZ[256] =
 };
 
 
-inline static uint32_t encodeMK(uint32_t x, uint32_t y, uint32_t z)
+inline uint32_t encodeMK(uint32_t x, uint32_t y, uint32_t z)
 {
     uint32_t result = 0;
     result = result |
-             mortonkeyZ[(z >> 8) & 0xFF] |
-             mortonkeyY[(y >> 8) & 0xFF] |
-             mortonkeyX[(x >> 8) & 0xFF];
-    result = result << 24 |
-             mortonkeyZ[(z)& 0xFF] |
-             mortonkeyY[(y)& 0xFF] |
-             mortonkeyX[(x)& 0xFF];
+             mortonkeyZ[(z >> 8u) & 0xFFu] |
+             mortonkeyY[(y >> 8u) & 0xFFu] |
+             mortonkeyX[(x >> 8u) & 0xFFu];
+    result = result << 24u |
+             mortonkeyZ[(z)& 0xFFu] |
+             mortonkeyY[(y)& 0xFFu] |
+             mortonkeyX[(x)& 0xFFu];
     return result;
 }
 
 
-static void decodeMK( const uint32_t morton,
+inline void decodeMK( const uint32_t morton,
                       uint32_t& x, uint32_t& y, uint32_t& z )
 {
     x = morton;
-    y = ( x >> 1 );
-    z = ( x >> 2 );
-    x &= 0x09249249;
-    y &= 0x09249249;
-    z &= 0x09249249;
-    x |= ( x >> 2 );
-    y |= ( y >> 2 );
-    z |= ( z >> 2 );
-    x &= 0x030c30c3;
-    y &= 0x030c30c3;
-    z &= 0x030c30c3;
-    x |= ( x >> 4 );
-    y |= ( y >> 4 );
-    z |= ( z >> 4 );
-    x &= 0x0300f00f;
-    y &= 0x0300f00f;
-    z &= 0x0300f00f;
-    x |= ( x >> 8 );
-    y |= ( y >> 8 );
-    z |= ( z >> 8 );
-    x &= 0x030000ff;
-    y &= 0x030000ff;
-    z &= 0x030000ff;
-    x |= ( x >> 16 );
-    y |= ( y >> 16 );
-    z |= ( z >> 16 );
-    x &= 0x000003ff;
-    y &= 0x000003ff;
-    z &= 0x000003ff;
+    y = ( x >> 1u );
+    z = ( x >> 2u );
+    x &= 0x09249249u;
+    y &= 0x09249249u;
+    z &= 0x09249249u;
+    x |= ( x >> 2u );
+    y |= ( y >> 2u );
+    z |= ( z >> 2u );
+    x &= 0x030c30c3u;
+    y &= 0x030c30c3u;
+    z &= 0x030c30c3u;
+    x |= ( x >> 4u );
+    y |= ( y >> 4u );
+    z |= ( z >> 4u );
+    x &= 0x0300f00fu;
+    y &= 0x0300f00fu;
+    z &= 0x0300f00fu;
+    x |= ( x >> 8u );
+    y |= ( y >> 8u );
+    z |= ( z >> 8u );
+    x &= 0x030000ffu;
+    y &= 0x030000ffu;
+    z &= 0x030000ffu;
+    x |= ( x >> 16u );
+    y |= ( y >> 16u );
+    z |= ( z >> 16u );
+    x &= 0x000003ffu;
+    y &= 0x000003ffu;
+    z &= 0x000003ffu;
 }
 
 #endif // MORTON_H_INCLUDED
