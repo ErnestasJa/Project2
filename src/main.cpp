@@ -23,6 +23,10 @@ int main() {
   auto appPath = platform::GetPlatformFileSystem()->GetExecutableDirectory();
   appPath = appPath.GetParentDirectory(); // for dev builds
 
+#ifdef MSVC_COMPILE
+  appPath = appPath.GetParentDirectory();
+#endif
+
   auto fsPtr = io::CreateFileSystem(appPath);
   auto fileSystem = fsPtr.get();
   fileSystem->AddSearchDirectory(appPath);
@@ -73,11 +77,14 @@ int main() {
   double freq = 64.0;
   double rgb_freq = 32.0;
   double octaves = 1.0;
-  double rgb_octaves = 4.0;
+  double rgb_octaves = 2.0;
 
-  for(int x = 0; x < 512; x++) {
-    for (int z = 0; z < 512; z++) {
-      int val = 96.0 * schnozer.octaveNoise0_1(((double)x) / freq, ((double)z)/freq, octaves);
+  const int world_size = 512;
+  const int height = 64;
+
+  for(int x = 0; x < world_size; x++) {
+    for (int z = 0; z < world_size; z++) {
+      int val = ((double)height) * schnozer.octaveNoise0_1(((double)x) / freq, ((double)z)/freq, octaves);
 
       uint8_t r = rgb_schnozer.octaveNoise0_1(x/ rgb_freq,z/rgb_freq, rgb_octaves) *255.0;
       uint8_t g = rgb_schnozer.octaveNoise0_1(z/ rgb_freq,x/rgb_freq, rgb_octaves) *255.0;
@@ -111,7 +118,7 @@ int main() {
 
   auto collisionManager = new CollisionManager(octree);
 
-  auto camera = core::MakeShared<render::PerspectiveCamera>(16.0 / 9.0, 45.0f);
+  auto camera = core::MakeShared<render::PerspectiveCamera>(16.0f / 9.0f, 45.0f);
   camera->SetRotation({0,glm::radians(-89.0f),0});
   renderContext->SetCurrentCamera(camera);
 
@@ -144,8 +151,8 @@ int main() {
   player->SetFlyEnabled(true);
   timer.Start();
 
-
   while (window->ShouldClose() == false) {
+
     auto delta_ms = timer.MilisecondsElapsed();
     float delta_seconds = ((float)delta_ms) / 1000.f;
 
@@ -171,6 +178,10 @@ int main() {
     window->SwapBuffers();
     window->PollEvents();
     renderer->EndFrame();
+
+    if(gameInputHandler->IsKeyDown(input::Keys::Esc)){
+      window->Close();
+    }
   }
 
   return 0;

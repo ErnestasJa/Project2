@@ -20,10 +20,10 @@ public:
     void RebuildChunk(uint32_t chunk);
     void RenderAllMeshes();
     void GenAllChunks();
-    void AddVoxelToMesh(render::BaseMesh* mesh, const MNode & node, uint8_t sides);
-    void AddQuadToMesh(render::BaseMesh* mesh, const glm::vec3 * face, uint8_t color[3]);
 
 private:
+  void AddVoxelToMesh(render::BaseMesh* mesh, const MNode & node, uint8_t sides);
+  void AddQuadToMesh(render::BaseMesh* mesh, const glm::vec3 * face, const uint8_t color[3]) noexcept;
   core::SharedPtr<render::BaseMesh> CreateEmptyMesh();
   void ClearMesh(render::BaseMesh* mesh);
   void ClearBuildNodes();
@@ -33,14 +33,15 @@ private:
   void GreedyBuildChunk(render::BaseMesh* mesh, const glm::vec3 & offset);
   void SetBuildNode(const MNode & node);
   uint8_t GetVisibleBuildNodeSides(uint32_t x, uint32_t y, uint32_t z);
-  void GetBuildNode(MNode & n, uint32_t x, uint32_t y, uint32_t z);
+  MNode GetBuildNode(uint32_t x, uint32_t y, uint32_t z);
+  bool CheckBuildNode(uint32_t x, uint32_t y, uint32_t z);
 
 private:
   MNode m_buildNodes[32][32][32];
   Map m_map;
   MortonOctTreePtr m_octree;
   render::IRenderer* m_renderer;
-  uint32_t m_level;uint32_t faceCount;
+  uint32_t m_level;
 };
 
 #endif // VOXMESHGENERATOR_H

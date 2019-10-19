@@ -3,17 +3,18 @@ project(TheProject2)
 
 
 set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -s -fdelete-null-pointer-checks -Wno-reorder -Wno-misleading-indentation -Wall -Werror=return-type -O3 -std=c++17 -include EngineInc.h")
-set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /MP /O3 /W3 /FIEngineInc.h")
+set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /std:c++latest /MP /O2 /W3 /FIEngineInc.h")
 
 #Only supporting gcc on linux, mingw(gcc)/nmake on windows
-#if(WIN32 AND NOT MINGW)
-#    set(CMAKE_CXX_FLAGS "${CPP_NMAKE_COMPILE_FLAGS}")
-#    message(STATUS "Using nmake build flags")
-#else()
+if(WIN32 AND NOT MINGW)
+    set(CMAKE_CXX_FLAGS "${CPP_NMAKE_COMPILE_FLAGS}")
+    message(STATUS "Using nmake build flags")
+    add_definitions(-DMSVC_COMPILE)
+else()
     set(CMAKE_CXX_FLAGS "${CPP_GCC_COMPILE_FLAGS}")
     message(STATUS "Using gcc build flags")
     message(STATUS "Build flags: ${CPP_GCC_COMPILE_FLAGS}")
-#endif()
+endif()
 
 set(SRC_PATH "src")
 set(INCLUDE_PATH "include")

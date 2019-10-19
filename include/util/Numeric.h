@@ -6,7 +6,7 @@
 namespace util {
 namespace numeric {
   constexpr float FloatingPointRoundingError = 0.00001f;
-  constexpr bool equals(float a, float b){
+  bool equals(float a, float b){
     return std::abs(a-b) <= FloatingPointRoundingError;
   }
 }
