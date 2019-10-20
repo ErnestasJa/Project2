@@ -1,10 +1,8 @@
 #include "geometry/SimpleGeometry.h"
 #include "input/FreeCameraInputHandler.h"
 #include "input/InputInc.h"
-#include "render/BaseMaterial.h"
 #include "render/RenderInc.h"
-#include "resource_management/GpuProgramManager.h"
-#include "resource_management/ImageLoader.h"
+#include "resource_management/ResourceManagementInc.h"
 #include "util/Noise.h"
 #include "voxel/Morton.h"
 #include "voxel/VoxMeshManager.h"
@@ -38,6 +36,7 @@ int main() {
   render::SWindowDefinition wDef;
   wDef.Dimensions = {1280, 720};
   wDef.Title = "TheProject2";
+  wDef.Fullscreen = false;
 
   auto context = engine::CreateContext(wDef);
   auto window = context->GetWindow();
@@ -47,14 +46,18 @@ int main() {
 
   auto program = mgr.LoadProgram("resources/shaders/phong_color");
   auto material = core::MakeUnique<material::BaseMaterial>(program);
-  material->SetI("DiffuseTextureSampler", 0);
+
+  auto program_anim = mgr.LoadProgram("resources/shaders/phong_anim");
+  auto material_anim = core::MakeUnique<material::BaseMaterial>(program_anim);
 
   if (!window) {
     std::cout << "Failed to create window" << std::endl;
     return -1;
   }
 
-
+  auto loader = res::IQMLoader(fsPtr);
+  auto animMesh = renderer->CreateAnimatedMesh();
+  loader.Load(animMesh.get(), io::Path("resources/models/steve.iqm"));
 
   window->SetCursorMode(render::CursorMode::HiddenCapture);
 
@@ -63,8 +66,8 @@ int main() {
   auto imgLoader = core::MakeUnique<res::ImageLoader>(fsPtr, renderer);
   auto renderContext = renderer->GetRenderContext();
 
-  auto texture = imgLoader->LoadImage(io::Path("resources/textures/grass.png"));
-  material->SetTexture(0, texture.get());
+  auto texture = imgLoader->LoadImage(io::Path("resources/models/untitled.png"));
+  material_anim->SetTexture(0, texture.get());
 
   auto octree= core::MakeShared<MortonOctTree>();
   auto vmgr = core::MakeUnique<VoxMeshManager>(renderer, octree, 5);
@@ -72,7 +75,6 @@ int main() {
   siv::PerlinNoise schnozer(12345);
   siv::PerlinNoise rgb_schnozer(2546);
   int nodeCount = 0;
-
 
   double freq = 64.0;
   double rgb_freq = 32.0;
@@ -115,9 +117,7 @@ int main() {
     //elog::LogInfo(core::string::CFormat("Chunk position [%i][%i][%i]", x,y,z));
   }
 
-
   auto collisionManager = new CollisionManager(octree);
-
   auto camera = core::MakeShared<render::PerspectiveCamera>(16.0f / 9.0f, 45.0f);
   camera->SetRotation({0,glm::radians(-89.0f),0});
   renderContext->SetCurrentCamera(camera);
@@ -151,6 +151,9 @@ int main() {
   player->SetFlyEnabled(true);
   timer.Start();
 
+  auto totalFrames = (float) animMesh->GetAnimationData().frames.size();
+  auto currentFrame = 0.0f;
+
   while (window->ShouldClose() == false) {
 
     auto delta_ms = timer.MilisecondsElapsed();
@@ -166,6 +169,16 @@ int main() {
     }
 
     renderer->BeginFrame();
+    currentFrame += 25.0f * delta_seconds;
+    animMesh->GetAnimationData().set_interp_frame(currentFrame);
+
+    glm::mat4 m(1);
+    m = glm::translate(m, glm::vec3(256, 48, 256)) *
+        glm::rotate(m,glm::radians(-90.0f), {1.f, 0.f, 0.0f}) *
+        glm::scale(m, {0.01f, 0.01f,0.01f}) ;
+
+
+    renderer->RenderMesh(animMesh.get(), material_anim.get(), m);
 
     auto meshes = vmgr->GetMeshes();
 
