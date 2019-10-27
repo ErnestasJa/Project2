@@ -2,7 +2,9 @@ cmake_minimum_required (VERSION 3.0)
 project(TheProject2)
 
 
-set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -s -fdelete-null-pointer-checks -Wno-reorder -Wno-misleading-indentation -Wall -Werror=return-type -O3 -std=c++17 -include EngineInc.h")
+set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -s -O3 -fdelete-null-pointer-checks -Wno-reorder -Wno-misleading-indentation -Wall -Werror=return-type -std=c++17 -include EngineInc.h")
+#set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -g -fdelete-null-pointer-checks -Wno-reorder -Wno-misleading-indentation -Wall -Werror=return-type -std=c++17 -include EngineInc.h")
+
 set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /std:c++latest /MP /O2 /W3 /FIEngineInc.h")
 
 #Only supporting gcc on linux, mingw(gcc)/nmake on windows

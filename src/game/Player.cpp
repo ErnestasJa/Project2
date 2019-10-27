@@ -75,7 +75,7 @@ bool Player::Jump(float velocity) {
     m_position.y += 0.01;
     m_velocity.y = velocity;
     m_onGround = false;
-    //elog::LogInfo(core::string::CFormat("ground %i", 1));
+    //elog::LogInfo(core::string::format("ground %i", 1));
     return true;
   }
   return false;
