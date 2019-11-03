@@ -11,16 +11,16 @@ layout(location = 4) in vec4 blend_weight;
 out vec2 UV;
 out vec3 vertexColor;
 
-uniform mat3x4 Bones[80];
+uniform mat4 Bones[80];
 uniform mat4 MVP;
 
 void main(){
-    mat3x4 m = Bones[int(blend_index.x)] * blend_weight.x;
+    mat4 m = Bones[int(blend_index.x)] * blend_weight.x;
     m += Bones[int(blend_index.y)] * blend_weight.y;
     m += Bones[int(blend_index.z)] * blend_weight.z;
     m += Bones[int(blend_index.w)] * blend_weight.w;
 
-    vec4 mpos = vec4(vec4(pos_in,1) * m, 1);
+    vec4 mpos = vec4(pos_in,1) * m;
 
     gl_Position =  MVP * mpos;
     UV = uv_in;

@@ -8,15 +8,15 @@ set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -s -O3 -fdelete-null-pointer-check
 set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /std:c++latest /MP /O2 /W3 /FIEngineInc.h")
 
 #Only supporting gcc on linux, mingw(gcc)/nmake on windows
-if(WIN32 AND NOT MINGW)
-    set(CMAKE_CXX_FLAGS "${CPP_NMAKE_COMPILE_FLAGS}")
-    message(STATUS "Using nmake build flags")
-    add_definitions(-DMSVC_COMPILE)
-else()
-    set(CMAKE_CXX_FLAGS "${CPP_GCC_COMPILE_FLAGS}")
-    message(STATUS "Using gcc build flags")
-    message(STATUS "Build flags: ${CPP_GCC_COMPILE_FLAGS}")
-endif()
+#if(WIN32 AND NOT MINGW)
+#    set(CMAKE_CXX_FLAGS "${CPP_NMAKE_COMPILE_FLAGS}")
+#    message(STATUS "Using nmake build flags")
+#    add_definitions(-DMSVC_COMPILE)
+#else()
+#    set(CMAKE_CXX_FLAGS "${CPP_GCC_COMPILE_FLAGS}")
+#    message(STATUS "Using gcc build flags")
+#    message(STATUS "Build flags: ${CPP_GCC_COMPILE_FLAGS}")
+#endif()
 
 set(SRC_PATH "src")
 set(INCLUDE_PATH "include")
@@ -49,14 +49,12 @@ include_directories (${INCLUDE_PATH})
 include_directories ("libs/TheEngine2/include")
 include_directories ("libs/TheEngine2/third_party/glm")
 
-add_subdirectory (libs/TheEngine2/third_party/glad)
-add_subdirectory (libs/TheEngine2/third_party/glfw)
-add_subdirectory (libs/TheEngine2/third_party/imgui)
-add_subdirectory (libs/TheEngine2/third_party/physfs)
 add_subdirectory (libs/TheEngine2)
 
 
 
 add_executable(TheProject2 ${PROJECT_SOURCES})
+set_target_properties(TheProject2 PROPERTIES COMPILE_FLAGS "${CPP_GCC_COMPILE_FLAGS}")
+target_link_libraries(TheProject2 engine)
 
-target_link_libraries(TheProject2 engine glad glfw imgui physfs-static)
+add_dependencies(TheProject2 engine)

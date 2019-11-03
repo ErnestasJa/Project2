@@ -42,6 +42,11 @@ int main() {
     auto window = context->GetWindow();
     auto renderer = context->GetRenderer();
 
+    if (!window) {
+        elog::LogInfo("Failed to create window");
+        return -1;
+    }
+
     res::GpuProgramManager mgr(renderer, fsPtr.get());
 
     auto program = mgr.LoadProgram("resources/shaders/phong_color");
@@ -50,84 +55,47 @@ int main() {
     auto program_anim = mgr.LoadProgram("resources/shaders/phong_anim");
     auto material_anim = core::MakeUnique<material::BaseMaterial>(program_anim);
 
-    if (!window) {
-        std::cout << "Failed to create window" << std::endl;
-        return -1;
-    }
+
+
+    window->SetCursorMode(render::CursorMode::HiddenCapture);
+    renderer->SetClearColor({20, 20, 20});
 
     auto loader = res::IQMLoader(fsPtr);
     auto animMesh = renderer->CreateAnimatedMesh();
-    loader.Load(animMesh.get(), io::Path("resources/models/steve.iqm"));
+    loader.Load(animMesh.get(), io::Path("resources/models/ProjectSteve.iqm"));
 
-    window->SetCursorMode(render::CursorMode::HiddenCapture);
-
-    renderer->SetClearColor({20, 20, 20});
+    res::mbd::MBDLoader mbdLoader;
+    auto mbdBones = mbdLoader.LoadMBD(fileSystem, io::Path("resources/models/ProjectSteve.mbd"));
+    const auto &iqmData = animMesh->GetAnimationData();
+    for (int i = 0; i < mbdBones.size(); i++) {
+        auto &mbdBone = mbdBones[i];
+        auto &iqmBone = iqmData.bones[i];
+    }
 
     auto imgLoader = core::MakeUnique<res::ImageLoader>(fsPtr, renderer);
     auto renderContext = renderer->GetRenderContext();
 
-    auto texture = imgLoader->LoadImage(io::Path("resources/models/untitled.png"));
+    auto texture = imgLoader->LoadImage(io::Path("resources/models/steve.png"));
     material_anim->SetTexture(0, texture.get());
 
     auto octree = core::MakeShared<MortonOctTree>();
-    auto vmgr = core::MakeUnique<VoxMeshManager>(renderer, octree, 5);
+    auto collisionManager = core::MakeUnique<CollisionManager>(octree);
+    auto voxMeshManager = core::MakeUnique<VoxMeshManager>(renderer, octree);
 
-    siv::PerlinNoise schnozer(12345);
-    siv::PerlinNoise rgb_schnozer(2546);
-    int nodeCount = 0;
-
-    double freq = 64.0;
-    double rgb_freq = 32.0;
-    double octaves = 1.0;
-    double rgb_octaves = 2.0;
-
-    const int world_size = 0;
-    const int height = 64;
-
-    for (int x = 0; x < world_size; x++) {
-        for (int z = 0; z < world_size; z++) {
-            int val = ((double) height) * schnozer.octaveNoise0_1(((double) x) / freq, ((double) z) / freq, octaves);
-
-            uint8_t r = rgb_schnozer.octaveNoise0_1(x / rgb_freq, z / rgb_freq, rgb_octaves) * 255.0;
-            uint8_t g = rgb_schnozer.octaveNoise0_1(z / rgb_freq, x / rgb_freq, rgb_octaves) * 255.0;
-
-            for (int y = 0; y < val; y++) {
-                uint8_t b = rgb_schnozer.octaveNoise0_1(y / rgb_freq, rgb_octaves) * 255.0;
-
-                octree->AddOrphanNode(MNode(encodeMK(x, y, z), 1, r, g, b));
-                nodeCount++;
-            }
-        }
-    }
-    if (world_size == 0) {
-        octree->AddOrphanNode(MNode(encodeMK(2, 0, 0), 1, 125, 0, 0));
-        octree->AddOrphanNode(MNode(encodeMK(2, 0, 2), 1, 125, 0, 0));
-        octree->AddOrphanNode(MNode(encodeMK(0, 1, 0), 1, 125, 0, 0));
-        octree->AddOrphanNode(MNode(encodeMK(0, 0, 2), 1, 125, 0, 0));
-    }
-
+    octree->AddNode(MNode(0,0,0));
+    octree->AddNode(MNode(0,1,0));
     octree->SortLeafNodes();
 
+    voxMeshManager->GenAllChunks();
+
+
+
     util::Timer timer;
-
-    timer.Start();
-    vmgr->GenAllChunks();
-    elog::LogInfo(core::string::format("Added %i nodes. Took %i ms", nodeCount,
-                                       timer.MilisecondsElapsed()));
-
-    auto meshes = vmgr->GetMeshes();
-    for (auto mesh: meshes) {
-        uint32_t x, y, z;
-        decodeMK(mesh.first, x, y, z);
-        //elog::LogInfo(core::string::format("Chunk position [%i][%i][%i]", x,y,z));
-    }
-
-    auto collisionManager = new CollisionManager(octree);
     auto camera = core::MakeShared<render::PerspectiveCamera>(16.0f / 9.0f, 45.0f);
     camera->SetRotation({0, glm::radians(-89.0f), 0});
     renderContext->SetCurrentCamera(camera);
 
-    auto player = core::MakeUnique<game::Player>(camera, collisionManager, glm::vec3(0, 0, 0), 1, 1.6);
+    auto player = core::MakeUnique<game::Player>(camera, collisionManager.get(), glm::vec3(0, 0, 0), 1, 1.6);
     auto gameInputHandler = core::MakeShared<input::GameInputHandler>();
 
     core::pod::Vec2<int32_t> m_mouseOld = {0, 0};
@@ -156,74 +124,16 @@ int main() {
     player->SetFlyEnabled(true);
     timer.Start();
 
+
     auto debugShader = mgr.LoadProgram("resources/shaders/debug");
     auto debugMaterial = core::MakeShared<material::BaseMaterial>(debugShader);
     debugMaterial->UseDepthTest = false;
     debugMaterial->RenderMode = material::MeshRenderMode::Lines;
     auto debugMesh = core::MakeUnique<render::debug::DebugLineMesh>(renderer->CreateBaseMesh(), debugMaterial);
 
+
     auto currentFrame = 0.0f;
-
-    auto animatedMeshPos = glm::vec3(20, 0, 0);
-
-
-//  const auto& animData = animMesh->GetAnimationData();
-//  const auto& bones = animData.bones;
-//  for(int i = 0; i < animData.bones.size(); i++)
-//  {
-//    const auto& bone = bones[i];
-//    const auto& transform = animData.current_frame[i];
-//
-//    auto &parent = bones[bone.parent];
-//    auto scale = bone.scale;
-//    auto start = bone.pos;
-//
-//    elog::LogInfo(core::string::format("Bone pos [%.4f, %.4f, %.4f], scale [%.4f, %.4f, %.4f], parent id=%i",
-//        start.x, start.y, start.z, scale.x, scale.y, scale.z, bone.parent));
-//  }
-
-    animMesh->GetAnimationData().set_frame(0);
-    const auto &animData = animMesh->GetAnimationData();
-    const auto &bones = animData.bones;
-
-    res::mbd::MBDLoader mbdLoader;
-    mbdLoader.LoadMBD(fileSystem, io::Path("resources/models/steve.mbd"));
-
-    debugMesh->Clear();
-
-    std::function<void(int, const render::Bone &, glm::vec3, glm::quat)> l;
-    l = [&](int index, const render::Bone &parent, glm::vec3 offset, glm::quat rotation) {
-
-        for (int i = 0; i < bones.size(); i++) {
-            auto &child = bones[i];
-            if (child.parent == index) {
-
-                const auto &parentTransform = animData.current_frame[index];
-                const auto &childTransform = animData.current_frame[i];
-
-                auto start = (parent.pos * glm::mat3_cast(rotation) + offset);
-                auto end = (start + child.pos * glm::mat3_cast(rotation * child.rot));
-
-                elog::LogInfo(core::string::format(
-                        "parent: %s, child: %s", parent.name.c_str(), child.name.c_str()));
-
-                debugMesh->AddLine(start, end, animData.bone_colors[i]);
-
-                l(i, child, start, rotation * child.rot);
-            }
-        }
-    };
-
-    for (int i = 0; i < bones.size(); i++) {
-        auto &parentBone = bones[i];
-
-        if (parentBone.parent >= 0)
-            continue;
-
-        l(i, parentBone, glm::vec3(0), glm::quat(1, 0, 0, 0));
-    }
-
-    debugMesh->Upload();
+    auto animatedMeshPos = glm::vec3(2, 0, 0);
 
     while (window->ShouldClose() == false) {
 
@@ -241,28 +151,47 @@ int main() {
 
         renderer->BeginFrame();
         currentFrame += 25.0f * delta_seconds;
+
+        ///Render voxels
+        for(const auto & mesh: voxMeshManager->GetMeshes())
+        {
+            renderer->RenderMesh(mesh.second.get(), material.get(), glm::mat4(1));
+        }
+
+        ///Render animated mesh
         animMesh->GetAnimationData().set_interp_frame(currentFrame);
 
         glm::mat4 m(1);
         m = glm::translate(m, animatedMeshPos) *
             glm::rotate(m, glm::radians(-90.0f), {1.f, 0.f, 0.0f}) *
-            glm::scale(m, {0.01f, 0.01f, 0.01f});
+            glm::scale(m, {1.0f, 1.0f, 1.0f});
 
 
         renderer->RenderMesh(animMesh.get(), material_anim.get(), m);
 
-        auto meshes = vmgr->GetMeshes();
+        ///Render debug mesh
+        if(mbdBones.empty()) {
+            debugMesh->Clear();
+            const auto &animData = animMesh->GetAnimationData();
+            for (int i = 0; i < mbdBones.size(); i++) {
+                auto &mbdBone = mbdBones[i];
 
+                auto start = glm::vec4(mbdBone.head, 1) * animData.current_frame[i];
+                auto end = glm::vec4(mbdBone.tail, 1) * animData.current_frame[i];
+                auto color = animData.bone_colors[i];
 
-        for (auto mesh: meshes) {
-            uint32_t x, y, z;
-            decodeMK(mesh.first, x, y, z);
-            renderer->RenderMesh(mesh.second.get(), material.get(), glm::vec3(0, 0, 0));
+                //elog::LogInfo(core::string::format("iqm: %s, mbd: %s", iqmBone.name.c_str(), mbdBone.name.c_str()));
+
+                debugMesh->AddLine(start, end, color);
+            }
+
+            debugMesh->Upload();
         }
 
-
-        ///Render debug mesh
-        renderer->RenderMesh(debugMesh->GetMesh(), debugMesh->GetMaterial(), glm::vec3(0));
+        glm::mat4 m2(1);
+        m2 = glm::translate(m2, animatedMeshPos) *
+            glm::rotate(m2, glm::radians(-90.0f), {1.f, 0.f, 0.0f});
+        renderer->RenderMesh(debugMesh->GetMesh(), debugMesh->GetMaterial(), m2);
 
         ///End frame
         window->SwapBuffers();
@@ -290,6 +219,7 @@ void HandlePlayerInput(game::Player *player, input::GameInputHandler *inputHandl
     auto sk = inputHandler->IsKeyDown(input::Keys::S);
     auto dk = inputHandler->IsKeyDown(input::Keys::D);
     auto ak = inputHandler->IsKeyDown(input::Keys::A);
+    auto supaSpeed = inputHandler->IsKeyDown(input::Keys::X);
 
     glm::vec3 forwardVelocity(0), strafeVelocity(0);
 
@@ -325,7 +255,7 @@ void HandlePlayerInput(game::Player *player, input::GameInputHandler *inputHandl
     if (anyDirectionKeyPressed) {
         auto sum = forwardVelocity + strafeVelocity;
         auto direction = glm::normalize(sum);
-        auto totalVelocity = direction * speed;
+        auto totalVelocity = direction * (supaSpeed ? speed * 10 : speed);
 
         player->GetVelocity().x = totalVelocity.x;
         player->GetVelocity().z = totalVelocity.z;
