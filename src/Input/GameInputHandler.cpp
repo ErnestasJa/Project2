@@ -5,9 +5,13 @@ namespace input {
 GameInputHandler::GameInputHandler() {
   const int maxKeys = 200;
   m_keyStates = core::UniquePtr<int>(new int[maxKeys]);
+
   for(int i = 0; i < e_input::Keys::Unknown.GetId() + 1; i++){
     m_keyStates.get()[i] = false;
   }
+
+  m_mouseOld = {0, 0};
+  m_mouseNew = {0, 0};
 }
 
 bool GameInputHandler::OnKeyDown(const input::Key &key, const bool IsRepeated) {
@@ -21,16 +25,17 @@ bool GameInputHandler::OnKeyUp(const Key &key, const bool repeated) {
 }
 
 bool GameInputHandler::OnMouseMove(const int32_t x, const int32_t y) {
-  if(m_mouseMoveHandler){
-    m_mouseMoveHandler(x, y);
-  }
+    m_mouseOld = m_mouseNew;
+    m_mouseNew = {x, y};
+
+    auto delta = m_mouseNew - m_mouseOld;
+    OnMouseMoveDelta(delta.x, delta.y);
+  return true;
+}
+bool GameInputHandler::OnMouseMoveDelta(const int32_t x, const int32_t y) {
   return true;
 }
 
-void GameInputHandler::SetMouseMoveHandler(
-    std::function<void(const int32_t, const int32_t)> mouseMoveHandler) {
-  m_mouseMoveHandler = mouseMoveHandler;
-}
 
 
 
