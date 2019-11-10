@@ -97,15 +97,12 @@ void AnimationPreviewState::Render(){
     m_debugMesh->Upload();
 
     glm::mat4 m2(1);
-    m2 = glm::translate(m2, glm::vec3(0, 0, 0)) *
-         glm::rotate(m2, glm::radians(-90.0f), {1.f, 0.f, 0.0f}) *
-         glm::scale(m, {1.0f, 1.0f, 1.0f});
+    m2 = glm::translate(m2, glm::vec3(0, 0, 0))
+       //* glm::rotate(m2, glm::radians(-90.0f), {1.f, 0.f, 0.0f})
+       * glm::scale(m, {1.0f, 1.0f, 1.0f});
 
     Game->GetRenderer()->RenderMesh(m_debugMesh->GetMesh(), m_debugMesh->GetMaterial(), m2);
   }
-  Game->GetWindow()->SwapBuffers();
-  Game->GetWindow()->PollEvents();
-  Game->GetRenderer()->EndFrame();
 }
 
 void AnimationPreviewState::HandleKeyInput(float deltaSeconds) {

@@ -12,12 +12,23 @@ int main() {
     return -1;
   }
 
+  auto g = std::unique_ptr<game::CGame>(Game);
+
   auto stateManager = Game->GetGameStateManager();
   stateManager->Register(core::MakeUnique<game::state::AnimationPreviewState>(), game::state::AnimationPreviewState::Name);
   stateManager->Switch(game::state::AnimationPreviewState::Name);
 
-  while (stateManager->Run()) {
+  while (true) {
+    Game->GetWindow()->PollEvents();
 
+    auto run = stateManager->Run();
+
+    Game->GetWindow()->SwapBuffers();
+    Game->GetRenderer()->EndFrame();
+
+    if(!run){
+      break;
+    }
   }
 
   return 0;
