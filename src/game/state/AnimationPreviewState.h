@@ -2,12 +2,13 @@
 #define ANIMATIONPREVIEWSTATE_H
 
 #include "IGameState.h"
+#include "resource_management/mesh/MBDBone.h"
 #include <Input/GameInputHandler.h>
 #include <game/Player.h>
 #include <render/PerspectiveCamera.h>
 #include <render/RenderFwd.h>
+#include <resource_management/mesh/AssimpImport.h>
 #include <util/Timer.h>
-#include "resource_management/mesh/MBDBone.h"
 
 namespace game::state {
 class AnimationPreviewState : public IGameState, public input::GameInputHandler {
@@ -26,10 +27,11 @@ public:
   bool OnMouseMoveDelta(const int32_t x, const int32_t y) override;
   void LoadMaterials();
   void Render();
+  void LoadAnimatedMesh(core::String name);
 
 private:
   core::UniquePtr<render::AnimatedMesh> m_mesh;
-  core::UniquePtr<material::BaseMaterial> m_material;
+  core::UniquePtr<material::BaseMaterial> m_animMeshMaterial;
   util::Timer m_timer;
   core::SharedPtr<render::PerspectiveCamera> m_camera;
   input::InputHandlerHandle m_inputHandlerHandle;
@@ -38,6 +40,9 @@ private:
   core::UniquePtr<render::debug::DebugLineMesh> m_debugMesh;
   bool m_shouldExitState = false;
   core::SharedPtr<render::ITexture> m_texture;
+  core::UniquePtr<res::mesh::AssimpImport> m_assimpImporter;
+  core::UniquePtr<render::AnimatedMesh> m_steve;
+  core::SharedPtr<material::BaseMaterial> m_phongMaterial;
 };
 } // namespace game::state
 

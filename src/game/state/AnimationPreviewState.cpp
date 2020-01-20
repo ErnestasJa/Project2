@@ -2,17 +2,16 @@
 #include "../Game.h"
 #include "render/AnimatedMesh.h"
 #include "render/BaseMaterial.h"
+#include "resource_management/mesh/AssimpImport.h"
 
 namespace game::state {
 const char * AnimationPreviewState::Name = "AnimationPreview";
 
 bool AnimationPreviewState::Initialize() {
+  m_assimpImporter = core::MakeUnique<res::mesh::AssimpImport>(Game->GetFileSystem(), Game->GetRenderer());
+
   Game->GetWindow()->SetCursorMode(render::CursorMode::HiddenCapture);
   Game->GetRenderer()->SetClearColor(render::Vec3i{155,155,255});
-  m_mesh = Game->GetRenderer()->CreateAnimatedMesh();
-
-  auto loader = res::IQMLoader(Game->GetFileSystem());
-  loader.Load(m_mesh.get(), io::Path("resources/models/ProjectSteve.iqm"));
 
   LoadMaterials();
 
@@ -25,29 +24,40 @@ bool AnimationPreviewState::Initialize() {
   m_debugMesh = core::MakeUnique<render::debug::DebugLineMesh>(
       Game->GetRenderer()->CreateBaseMesh(), m_debugMaterial);
 
-  res::mbd::MBDLoader mbdLoader;
-  m_bones = mbdLoader.LoadMBD(Game->GetFileSystem(), io::Path("resources/models/ProjectSteve.mbd"));
+  m_steve = m_assimpImporter->LoadMesh(io::Path("resources/models/ProjectSteve.fbx"));
+  m_steve->GetAnimationData().SetAnimation("Armature|idle");
 
   m_timer.Start();
   return false;
 }
 
+void AnimationPreviewState::LoadAnimatedMesh(core::String name) {
+  m_mesh->Clear();
+  m_assimpImporter->LoadMesh(io::Path("resources/models/" + name));
+}
+
 void AnimationPreviewState::LoadMaterials() {
   auto program = Game->GetGpuProgramManager()->LoadProgram(
       "resources/shaders/phong_anim");
-  m_material = core::MakeUnique<material::BaseMaterial>(program);
+  m_animMeshMaterial = core::MakeUnique<material::BaseMaterial>(program);
 
   m_texture = Game->GetImageLoader()->LoadImage(io::Path("resources/models/steve.png"));
-  m_material->SetTexture(0, m_texture.get());
+  m_animMeshMaterial->SetTexture(0, m_texture.get());
 
   auto debugShader = Game->GetGpuProgramManager()->LoadProgram(
       "resources/shaders/debug");
   m_debugMaterial = core::MakeShared<material::BaseMaterial>(debugShader);
   m_debugMaterial->UseDepthTest = false;
   m_debugMaterial->RenderMode = material::MeshRenderMode::Lines;
+
+  auto phongShader = Game->GetGpuProgramManager()->LoadProgram(
+      "resources/shaders/phong_color");
+  m_phongMaterial = core::MakeShared<material::BaseMaterial>(phongShader);
 }
 
-bool AnimationPreviewState::Finalize() { return false; }
+bool AnimationPreviewState::Finalize() {
+  return false;
+}
 
 core::String AnimationPreviewState::GetName() {
   return Name;
@@ -72,41 +82,69 @@ void AnimationPreviewState::Render(){
   Game->GetRenderer()->BeginFrame();
   Game->GetRenderer()->Clear();
 
-  m_mesh->GetAnimationData().set_interp_frame(CurrentFrame);
+//  m_mesh->GetAnimationData().set_interp_frame(CurrentFrame);
+//
+//  glm::mat4 m(1);
+//  m = glm::translate(m, glm::vec3(0, 0, 0)) *
+//      glm::rotate(m, glm::radians(-90.0f), {1.f, 0.f, 0.0f}) *
+//      glm::scale(m, {1.0f, 1.0f, 1.0f});
+//
+//  Game->GetRenderer()->RenderMesh(m_mesh.get(), m_animMeshMaterial.get(), m);
+//
+//  const auto &animData = m_mesh->GetAnimationData();
+//  if(m_bones.empty() == false && m_bones.size() <= animData.bones.size()) {
+//    m_debugMesh->Clear();
+//    for (int i = 0; i < m_bones.size(); i++) {
+//      auto &mbdBone = m_bones[i];
+//
+//      auto start = glm::vec4(mbdBone.head, 1) * animData.current_frame[i];
+//      auto end = glm::vec4(mbdBone.tail, 1) * animData.current_frame[i];
+//      auto color = animData.bone_colors[i];
+//
+//      m_debugMesh->AddLine(start, end, color);
+//    }
+//
+//    m_debugMesh->Upload();
+//
+//    glm::mat4 m2(1);
+//    m2 = glm::translate(m2, glm::vec3(0, 0, 0))
+//       * glm::rotate(m2, glm::radians(-90.0f), {1.f, 0.f, 0.0f})
+//       * glm::scale(m2, {1.0f, 1.0f, 1.0f});
+//
+//    Game->GetRenderer()->RenderMesh(m_debugMesh->GetMesh(), m_debugMesh->GetMaterial(), m2);
+//  }
 
-  glm::mat4 m(1);
-  m = glm::translate(m, glm::vec3(0, 0, 0)) *
-      glm::rotate(m, glm::radians(-90.0f), {1.f, 0.f, 0.0f}) *
-      glm::scale(m, {1.0f, 1.0f, 1.0f});
+  if(m_steve) {
+    glm::mat4 animatedTransform(1);
+      animatedTransform = glm::translate(animatedTransform, glm::vec3(0, 0, 0))
+         // * glm::rotate(m3, glm::radians(-90.0f), {1.f, 0.f, 0.0f})
+         * glm::scale(animatedTransform, {1.0f, 1.0f, 1.0f});
 
-  Game->GetRenderer()->RenderMesh(m_mesh.get(), m_material.get(), m);
-
-  const auto &animData = m_mesh->GetAnimationData();
-  if(m_bones.empty() == false && m_bones.size() <= animData.bones.size()) {
-    m_debugMesh->Clear();
-    for (int i = 0; i < m_bones.size(); i++) {
-      auto &mbdBone = m_bones[i];
-
-      auto start = glm::vec4(mbdBone.head, 1) * animData.current_frame[i];
-      auto end = glm::vec4(mbdBone.tail, 1) * animData.current_frame[i];
-      auto color = animData.bone_colors[i];
-
-      m_debugMesh->AddLine(start, end, color);
+    if(m_steve->GetAnimationData().current_animation){
+        if(utils::math::gequal(CurrentFrame, m_steve->GetAnimationData().current_animation->duration)){
+            CurrentFrame = 0;
+        }
     }
 
-    m_debugMesh->Upload();
+    m_steve->GetAnimationData().Animate(CurrentFrame);
+    Game->GetRenderer()->RenderMesh(m_steve.get(), m_animMeshMaterial.get(), animatedTransform);
 
-    glm::mat4 m2(1);
-    m2 = glm::translate(m2, glm::vec3(0, 0, 0))
-       //* glm::rotate(m2, glm::radians(-90.0f), {1.f, 0.f, 0.0f})
-       * glm::scale(m, {1.0f, 1.0f, 1.0f});
-
-    Game->GetRenderer()->RenderMesh(m_debugMesh->GetMesh(), m_debugMesh->GetMaterial(), m2);
+    /*glm::mat4 regularTransform(1);
+    regularTransform = glm::translate(regularTransform, glm::vec3(-5, 5, 0))
+                      * glm::scale(regularTransform, {1.0f, 1.0f, 1.0f});
+    Game->GetRenderer()->RenderMesh(m_steve.get(), m_phongMaterial.get(), regularTransform);*/
   }
 }
 
 void AnimationPreviewState::HandleKeyInput(float deltaSeconds) {
   m_shouldExitState |= IsKeyDown(input::Keys::Esc);
+
+  if(IsKeyDown(input::Keys::R)){
+      LoadAnimatedMesh("mr_fixit");
+  }
+  else if(IsKeyDown(input::Keys::T)){
+      LoadAnimatedMesh("ProjectSteve");
+  }
 
   auto look = m_camera->GetLocalZ();
   auto right = m_camera->GetLocalX();
@@ -157,7 +195,7 @@ void AnimationPreviewState::HandleKeyInput(float deltaSeconds) {
 }
 
 bool AnimationPreviewState::OnMouseMoveDelta(const int32_t x,
-                                                          const int32_t y) {
+                                             const int32_t y) {
   auto rot = m_camera->GetRotation();
   float mouseSpeed = 0.01;
   rot.x -= x * mouseSpeed;
