@@ -38,11 +38,13 @@ private:
   core::SharedPtr<material::BaseMaterial> m_debugMaterial;
   core::Vector<res::mbd::Bone> m_bones;
   core::UniquePtr<render::debug::DebugLineMesh> m_debugMesh;
+  core::UniquePtr<render::debug::DebugLineMesh> m_grid;
   bool m_shouldExitState = false;
   core::SharedPtr<render::ITexture> m_texture;
   core::UniquePtr<res::mesh::AssimpImport> m_assimpImporter;
   core::UniquePtr<render::AnimatedMesh> m_steve;
   core::SharedPtr<material::BaseMaterial> m_phongMaterial;
+  void RenderBones(float time);
 };
 } // namespace game::state
 

@@ -3,6 +3,7 @@
 #include "render/AnimatedMesh.h"
 #include "render/BaseMaterial.h"
 #include "resource_management/mesh/AssimpImport.h"
+#include <glm/gtx/matrix_decompose.hpp>
 
 namespace game::state {
 const char * AnimationPreviewState::Name = "AnimationPreview";
@@ -23,6 +24,14 @@ bool AnimationPreviewState::Initialize() {
 
   m_debugMesh = core::MakeUnique<render::debug::DebugLineMesh>(
       Game->GetRenderer()->CreateBaseMesh(), m_debugMaterial);
+
+  auto gridMat = m_debugMaterial->Instance();
+  gridMat->UseDepthTest = true;
+  m_grid = core::MakeUnique<render::debug::DebugLineMesh>(
+      Game->GetRenderer()->CreateBaseMesh(), gridMat);
+
+  m_grid->AddGrid(50, 1, glm::tvec3<uint8_t>(0,0,0));
+  m_grid->Upload();
 
   m_steve = m_assimpImporter->LoadMesh(io::Path("resources/models/ProjectSteve.fbx"));
   m_steve->GetAnimationData().SetAnimation("Armature|idle");
@@ -71,11 +80,82 @@ bool AnimationPreviewState::Run() {
   HandleKeyInput(delta_seconds);
 
   //elog::LogInfo(core::string::format("delta ms: {}", delta_seconds));
-  CurrentFrame += 32.0f * delta_seconds;
+  CurrentFrame += (32.0f * delta_seconds) / 5.0f;
 
   Render();
 
   return m_shouldExitState == false;
+}
+
+glm::tvec3<uint8_t> GetBoneColor(core::String name){
+    if(name == "head"){
+        return {255,0,0};
+    }
+    if(name == "chest"){
+        return {0,255,0};
+    }
+
+    if(name == "armL"){
+        return {0,255,255};
+    }
+    if(name == "armR"){
+        return {255,255,0};
+    }
+
+    if(name == "legL"){
+        return {0,0,255};
+    }
+    if(name == "legR"){
+        return {255,0,0};
+    }
+    return {0,0,0};
+}
+
+void AnimationPreviewState::RenderBones(float time){
+    auto & animData = m_steve->GetAnimationData();
+    auto & bones = animData.bones;
+
+    core::Stack<render::BoneTransform> boneIndexStack;
+
+    for(int i = 0; i < bones.size(); i++ ){
+        if(bones[i].parent < 0){
+            boneIndexStack.push(render::BoneTransform {
+                    i,
+                    glm::mat4(1)
+            });
+        }
+    }
+
+    m_debugMesh->Clear();
+
+    while(!boneIndexStack.empty()){
+        auto boneInfo = boneIndexStack.top();
+        boneIndexStack.pop();
+
+        auto animTransform = animData.current_animation->BoneKeys[boneInfo.index].GetTransform(time);
+        auto & bone = bones[boneInfo.index];
+        auto boneTransform = animData.GlobalInverseTransform * boneInfo.ParentTransform * animTransform;
+        auto boneEndTransform = animData.GlobalInverseTransform * boneTransform * bone.bone_end;
+
+
+        glm::vec4 start =  boneTransform * glm::vec4(0,0,0,1);
+        glm::vec4 end = boneEndTransform * glm::vec4(0,0,0,1);
+
+        m_debugMesh->AddLine(glm::vec3(start.x, start.y, start.z), glm::vec3(end.x, end.y, end.z), GetBoneColor(bone.name));
+
+        for(int i = 0; i < bones.size(); i++){
+            if(bones[i].parent == boneInfo.index){
+                boneIndexStack.push(render::BoneTransform {
+                        i,
+                        boneTransform
+                });
+            }
+        }
+    }
+
+    m_debugMesh->Upload();
+    Game->GetRenderer()->RenderMesh(m_debugMesh->GetMesh(), m_debugMesh->GetMaterial(), glm::mat4(1));
+    //
 }
 
 void AnimationPreviewState::Render(){
@@ -133,6 +213,8 @@ void AnimationPreviewState::Render(){
     regularTransform = glm::translate(regularTransform, glm::vec3(-5, 5, 0))
                       * glm::scale(regularTransform, {1.0f, 1.0f, 1.0f});
     Game->GetRenderer()->RenderMesh(m_steve.get(), m_phongMaterial.get(), regularTransform);*/
+    Game->GetRenderer()->RenderMesh(m_grid->GetMesh(), m_grid->GetMaterial(), glm::mat4(1));
+    RenderBones(CurrentFrame);
   }
 }
 
