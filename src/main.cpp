@@ -27,6 +27,12 @@ int main() {
     Game->GetRenderer()->EndFrame();
 
     if(!run){
+      auto state = stateManager->GetCurrentState();
+      if(state)
+      {
+        elog::LogInfo("Exiting state: " + state->GetName());
+        state->Finalize();
+      }
       break;
     }
   }

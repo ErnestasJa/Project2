@@ -30,10 +30,12 @@ void GameStateManager::Switch(core::String name) {
 bool GameStateManager::Run() {
   if (m_nextState) {
     if (m_currentState) {
+      elog::LogInfo("Exiting state: " + m_currentState->GetName());
       m_currentState->Finalize();
     }
 
     m_currentState = m_nextState;
+    elog::LogInfo("Entering state: " + m_currentState->GetName());
     m_currentState->Initialize();
     m_nextState = nullptr;
   }

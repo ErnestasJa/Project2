@@ -44,7 +44,10 @@ set(PROJECT_SOURCES
         "${SRC_PATH}/object/Player.cpp"
         "${SRC_PATH}/game/Game.cpp"
         "${SRC_PATH}/game/state/AnimationPreviewState.cpp"
-        src/game/GameStateManager.cpp)
+        "${SRC_PATH}/game/GameStateManager.cpp"
+        "${SRC_PATH}/object/Actor.cpp"
+        "${SRC_PATH}/object/AnimatedMeshActor.cpp"
+        "${SRC_PATH}/scene/rendering/Renderer.cpp")
 
 
 include_directories (${INCLUDE_PATH})

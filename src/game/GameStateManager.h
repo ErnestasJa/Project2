@@ -12,6 +12,10 @@ namespace game {
         void Switch(core::String name);
         bool Run();
 
+        state::IGameState* GetCurrentState(){
+          return m_currentState;
+        }
+
     private:
         core::UnorderedMap<core::String, core::UniquePtr<state::IGameState>> m_stateMap;
         state::IGameState* m_currentState;

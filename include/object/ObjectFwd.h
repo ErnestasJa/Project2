@@ -1,0 +1,10 @@
+#ifndef THEPROJECT2_INCLUDE_OBJECT_OBJECTFWD_H_
+#define THEPROJECT2_INCLUDE_OBJECT_OBJECTFWD_H_
+
+namespace game::obj {
+class Actor;
+class AnimatedMeshActor;
+}
+
+
+#endif // THEPROJECT2_INCLUDE_OBJECT_OBJECTFWD_H_
