@@ -3,7 +3,7 @@
 
 
 class MortonOctTree;
-typedef std::shared_ptr<MortonOctTree> MortonOctTreePtr;
+typedef core::SharedPtr<MortonOctTree> MortonOctTreePtr;
 
 class Logger;
 
@@ -22,6 +22,6 @@ protected:
         uint32_t Depth; /// just until we get rid of templated octree.
 };
 
-typedef std::shared_ptr<BVoxLoader> BVoxLoaderPtr;
+typedef core::SharedPtr<BVoxLoader> BVoxLoaderPtr;
 
 #endif

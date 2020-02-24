@@ -50,11 +50,15 @@ void AnimatedMeshActor::Update(float deltaSeconds) {
 
 
 glm::mat4 AnimatedMeshActor::GetTransform() {
-  return glm::translate(glm::mat4(1), m_position) /** glm::yawPitchRoll(m_rotation.x, m_rotation.y, m_rotation.z) * glm::scale(glm::mat4(1), m_scale)*/;
+  return glm::translate(glm::mat4(1), m_position) * glm::toMat4(glm::quat(m_rotation)) * glm::scale(glm::mat4(1), m_scale);
 }
 
 render::anim::AnimationController *AnimatedMeshActor::GetAnimationController() {
   return m_animationController.get();
+}
+
+const render::anim::Armature & AnimatedMeshActor::GetArmature() const {
+  return m_animatedMesh->GetArmature();
 }
 
 }

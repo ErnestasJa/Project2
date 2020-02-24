@@ -4,10 +4,10 @@
 #include "render/BaseMaterial.h"
 #include "resource_management/mesh/AssimpImport.h"
 #include "object/AnimatedMeshActor.h"
+#include "render/animation/AnimationController.h"
 #include <glm/gtx/matrix_decompose.hpp>
 
 namespace game::state {
-const char * AnimationPreviewState::Name = "AnimationPreview";
 
 bool AnimationPreviewState::Initialize() {
   Game->GetWindow()->SetCursorMode(render::CursorMode::HiddenCapture);
@@ -43,9 +43,7 @@ bool AnimationPreviewState::Initialize() {
 }
 
 void AnimationPreviewState::LoadMaterials() {
-  auto debugShader = Game->GetGpuProgramManager()->LoadProgram(
-      "resources/shaders/debug");
-  m_debugMaterial = core::MakeShared<material::BaseMaterial>(debugShader);
+  m_debugMaterial = Game->GetResourceManager()->LoadMaterial("resources/shaders/debug");
   m_debugMaterial->UseDepthTest = false;
   m_debugMaterial->RenderMode = material::MeshRenderMode::Lines;
 }
@@ -55,7 +53,7 @@ bool AnimationPreviewState::Finalize() {
 }
 
 core::String AnimationPreviewState::GetName() {
-  return Name;
+  return "AnimationPreview";
 }
 
 bool AnimationPreviewState::Run() {
@@ -82,6 +80,20 @@ void AnimationPreviewState::Render(){
 
   Game->GetRenderer()->RenderMesh(m_grid->GetMesh(), m_grid->GetMaterial(), glm::mat4(1));
   Game->GetSceneRenderer()->Render(m_playerActor.get());
+
+  auto weaponSlotTransform = m_playerActor->GetAnimationController()->GetBoneTransformation("weapon");
+  auto weaponTransform = m_weaponActor->GetArmature().GetBones()[0].offset;
+
+  auto weapTransform = (weaponSlotTransform * weaponTransform);
+  glm::vec3 pos, scale, skew;
+  glm::quat rot;
+  glm::vec4 perspective;
+
+  glm::decompose(weapTransform, scale, rot, pos, skew, perspective);
+
+  m_weaponActor->SetPosition(pos);
+  m_weaponActor->SetRotation(glm::eulerAngles(rot));
+
   Game->GetSceneRenderer()->Render(m_weaponActor.get());
 }
 
@@ -120,6 +132,13 @@ void AnimationPreviewState::HandleKeyInput(float deltaSeconds) {
     strafeVelocity.x = -right.x;
     strafeVelocity.y = -right.y;
     strafeVelocity.z = -right.z;
+  }
+
+  if(IsKeyDown(input::Keys::F)){
+    m_playerActor->GetAnimationController()->SetAnimation("Armature|attack");
+  }
+  else if(IsKeyDown(input::Keys::G)){
+    m_playerActor->GetAnimationController()->SetAnimation("Armature|walk");
   }
 
   bool anyDirectionKeyPressed = wk | ak | sk | dk;

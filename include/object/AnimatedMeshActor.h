@@ -24,6 +24,7 @@ public:
 
   void Update(float deltaSeconds);
   render::anim::AnimationController* GetAnimationController();
+  const render::anim::Armature& GetArmature() const;
 
 protected:
   core::SharedPtr<render::AnimatedMesh> m_animatedMesh;

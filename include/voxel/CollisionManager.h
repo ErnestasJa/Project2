@@ -8,7 +8,7 @@ class AxisAlignedBoundingBox;
 struct CollisionInfo;
 struct AABBCollisionInfo;
 class MortonOctTree;
-typedef std::shared_ptr<MortonOctTree> MortonOctTreePtr;
+typedef core::SharedPtr<MortonOctTree> MortonOctTreePtr;
 
 #include "VoxelSide.h"
 

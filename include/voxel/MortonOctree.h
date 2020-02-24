@@ -22,6 +22,6 @@ private:
   core::Vector<MNode> m_nodes;
 };
 
-typedef std::shared_ptr<MortonOctTree> MortonOctTreePtr;
+typedef core::SharedPtr<MortonOctTree> MortonOctTreePtr;
 
 #endif	/* MORTONOCTTREE_H */

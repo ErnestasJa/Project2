@@ -15,7 +15,6 @@ namespace game::state {
 class AnimationPreviewState : public IGameState, public input::GameInputHandler {
 public:
   float CameraSpeed = 0.2f;
-  static const char * Name;
 public:
   bool Initialize() final;
   bool Finalize() final;
