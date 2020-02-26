@@ -1,11 +1,14 @@
 #include "voxel/VoxMeshManager.h"
-#include "stdlib.h"
 #include "voxel/Morton.h"
+#include "voxel/MortonOctree.h"
+#include "voxel/OctreeConstants.h"
 #include <render/BaseMesh.h>
 #include <render/IRenderer.h>
+#include "stdlib.h"
 
+namespace vox {
 VoxMeshManager::VoxMeshManager(render::IRenderer *renderer,
-                               MortonOctTreePtr octree, uint32_t level)
+                               core::SharedPtr<MortonOctree> octree, uint32_t level)
     : m_renderer(renderer), m_octree(octree), m_level(level) {
   ClearBuildNodes();
 }
@@ -61,9 +64,10 @@ inline void clearArea(MaskNode mask[32][32], bool front, int si, int sj, int i2,
 
 MNode VoxMeshManager::GetBuildNode(uint32_t x, uint32_t y, uint32_t z) {
   if (x > 31 || y > 31 || z > 31) {
-    return MNode(0,0);
+    return MNode(0, 0);
   } else {
-    return m_buildNodes[x][y][z];;
+    return m_buildNodes[x][y][z];
+    ;
   }
 }
 
@@ -107,7 +111,7 @@ inline void VoxMeshManager::BuildSliceMask(uint32_t dim, uint32_t slice,
 
         if (cn.size == 1) {
           mask_node.frontFace = CheckBuildNode(x, slice + 1, y) == false;
-          mask_node.backFace = CheckBuildNode(x, slice - 1, y)  == false;
+          mask_node.backFace = CheckBuildNode(x, slice - 1, y) == false;
         }
       }
     break;
@@ -362,7 +366,7 @@ void VoxMeshManager::GenAllChunks() {
   uint32_t currentChunkMortonKey = nodeChunk =
       m_octree->GetChildNodes()[0].start & CHUNK_MASK;
 
-  for (auto & node : m_octree->GetChildNodes()) {
+  for (auto &node : m_octree->GetChildNodes()) {
     nodeChunk = node.start & CHUNK_MASK; /// get chunk (size 32x32x32)
 
     if (nodeChunk !=
@@ -385,7 +389,7 @@ void VoxMeshManager::GenAllChunks() {
   GreedyBuildChunk(mesh.get(), glm::vec3(x, y, z));
   m_map[nodeChunk] = mesh;
 
-  for (auto & it : m_map)
+  for (auto &it : m_map)
     it.second->Upload();
 }
 
@@ -549,6 +553,7 @@ void VoxMeshManager::RebuildChunk(uint32_t chunk) {
 }
 
 void VoxMeshManager::RenderAllMeshes() {
-  for (auto & it : m_map)
+  for (auto &it : m_map)
     it.second->Render();
+}
 }

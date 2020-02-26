@@ -5,7 +5,7 @@
 #include "MortonOctree.h"
 #include "BVoxLoader.h"
 
-BVoxLoader::BVoxLoader(MortonOctTreePtr octree, Logger * log)
+BVoxLoader::BVoxLoader(MortonOctreePtr octree, Logger * log)
 {
 	m_log = log;
 	m_octree = octree;

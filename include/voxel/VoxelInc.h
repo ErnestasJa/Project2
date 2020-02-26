@@ -8,5 +8,7 @@
 #include "VoxelSide.h"
 #include "Morton.h"
 #include "MortonOctree.h"
+#include "VoxMeshManager.h"
+#include "CollisionManager.h"
 
 #endif // THEPROJECT2_INCLUDE_VOXEL_VOXELINC_H_

@@ -7,6 +7,7 @@ namespace game::state {
         virtual ~IGameState(){
 
         }
+
         virtual bool Initialize() = 0;
         virtual bool Finalize() = 0;
         virtual core::String GetName() = 0;

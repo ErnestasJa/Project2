@@ -8,6 +8,9 @@ public:
   Timer();
   void Start();
   int32_t MilisecondsElapsed();
+  int32_t MicrosecondsElapsed();
+  float SecondsElapsed();
+  uint32_t SecondsSinceEpoch();
 private:
   std::chrono::steady_clock::time_point m_startTime;
 };

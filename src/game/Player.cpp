@@ -1,24 +1,29 @@
 #include "game/Player.h"
+#include "render/animation/AnimationController.h"
+#include "render/animation/Animation.h"
 #include "voxel/CollisionInfo.h"
 #include "voxel/CollisionManager.h"
 #include <core/AxisAlignedBoundingBox.h>
 #include <glm/geometric.hpp>
 
 namespace game {
-static constexpr float GRAVITY_CONSTANT = -4.8f;
-static constexpr float TERMINAL_VELOCITY = -20.0f;
+static constexpr float GRAVITY_CONSTANT = -9.8f;
+static constexpr float TERMINAL_VELOCITY = 40.0f;
 
-Player::Player(core::SharedPtr<render::ICamera> cam, CollisionManager *octree,
+Player::Player(core::SharedPtr<game::obj::AnimatedMeshActor> playerActor,
+    core::SharedPtr<render::ICamera> cam, vox::CollisionManager *octree,
                glm::vec3 position, float width, float height,
                glm::vec3 eyeOffset) {
   m_octree = octree;
   m_cam = cam;
   m_eyeOffset = eyeOffset;
   m_position = position;
+  m_playerActor = playerActor;
   m_aabb = core::AxisAlignedBoundingBox(
       glm::vec3(0, 0, 0), glm::vec3(width / 2.0f, height / 2.0f, width / 2.0f));
   m_onGround = false;
   m_flyEnabled = false;
+  m_height = height;
 }
 
 Player::~Player() {
@@ -40,9 +45,6 @@ void Player::Update(float timeStep) {
   if (m_flyEnabled == false) {
     m_velocity += glm::vec3(0, GRAVITY_CONSTANT, 0);
 
-    if (m_velocity.y < -50.0f)
-      m_velocity.y = -50;
-
     if (m_onGround)
       m_velocity.y = 0;
 
@@ -56,14 +58,44 @@ void Player::Update(float timeStep) {
   } else {
     glm::vec3 velocity = m_velocity * timeStep;
 
-    if (velocity.y < TERMINAL_VELOCITY) {
-      velocity.y = TERMINAL_VELOCITY;
+    if (velocity.y < -TERMINAL_VELOCITY) {
+      velocity.y = -TERMINAL_VELOCITY;
     }
 
     m_position = (m_position + velocity);
   }
 
+  UpdateMesh(timeStep);
+
   m_cam->SetPosition(m_position + m_eyeOffset);
+}
+
+void Player::UpdateMesh(float deltaSeconds){
+  auto xzVelocity = m_velocity;
+  xzVelocity.y=0;
+
+  auto currentAnimation = m_playerActor->GetAnimationController()->GetCurrentAnimation();
+
+  if(glm::length(xzVelocity) > 0.01) {
+    auto walkAnimationName = "Armature|walk";
+
+    if(!currentAnimation || currentAnimation->Name != walkAnimationName) {
+      m_playerActor->GetAnimationController()->SetAnimation(
+          walkAnimationName);
+    }
+  }
+  else {
+    if(!currentAnimation || currentAnimation->Name != "Armature|idle") {
+      m_playerActor->GetAnimationController()->SetAnimation("Armature|idle");
+      m_playerActor->GetAnimationController()->OverrideFps(0.5);
+    }
+  }
+
+  glm::vec3 playerRot;
+  playerRot.y = m_cam->GetRotation().x;
+  m_playerActor->SetPosition(m_position - glm::vec3(0, m_height/2.f, 0));
+  m_playerActor->SetRotation(playerRot);
+  m_playerActor->Update(deltaSeconds);
 }
 
 void Player::SetFlyEnabled(bool enabled) { m_flyEnabled = enabled; }
@@ -97,7 +129,7 @@ bool Player::IsColliding() {
   return m_octree->CheckCollisionB(aabb);
 }
 
-bool sortCI(const AABBCollisionInfo &a, const AABBCollisionInfo &b) {
+bool sortCI(const vox::AABBCollisionInfo &a, const vox::AABBCollisionInfo &b) {
   return a.time < b.time;
 }
 
@@ -109,7 +141,7 @@ static bool IsNullVec(const glm::vec3 &n) {
   return (n.x == n.y && n.y == n.z && n.z == 0.0);
 }
 
-bool SortCollisions(AABBCollisionInfo &a, AABBCollisionInfo &b) {
+bool SortCollisions(vox::AABBCollisionInfo &a, vox::AABBCollisionInfo &b) {
   return a.time < b.time;
 }
 

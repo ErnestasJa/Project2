@@ -12,8 +12,6 @@ AnimatedMeshActor::AnimatedMeshActor(core::String name,
   if(m_animatedMesh->GetAnimations().size()) {
     m_animationController =
         core::MakeUnique<render::anim::AnimationController>(animatedMesh.get());
-    m_animationController->SetAnimation(0);
-    m_animationController->Animate(0);
   }
 }
 

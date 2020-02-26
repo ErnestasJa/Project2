@@ -1,10 +1,10 @@
 #include "AnimationPreviewState.h"
-#include "../Game.h"
+#include "game/Game.h"
+#include "object/AnimatedMeshActor.h"
 #include "render/AnimatedMesh.h"
 #include "render/BaseMaterial.h"
-#include "resource_management/mesh/AssimpImport.h"
-#include "object/AnimatedMeshActor.h"
 #include "render/animation/AnimationController.h"
+#include "resource_management/mesh/AssimpImport.h"
 #include <glm/gtx/matrix_decompose.hpp>
 
 namespace game::state {

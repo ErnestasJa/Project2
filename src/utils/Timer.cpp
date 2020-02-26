@@ -16,5 +16,20 @@ int32_t Timer::MilisecondsElapsed() {
   return ms;
 }
 
+int32_t Timer::MicrosecondsElapsed() {
+  std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::microseconds>(now - m_startTime).count();
+  return ms;
+}
+
+float Timer::SecondsElapsed() {
+  std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::microseconds>(now - m_startTime).count();
+  return ms / 1e6f;
+}
+
+uint32_t Timer::SecondsSinceEpoch() {
+  return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 }

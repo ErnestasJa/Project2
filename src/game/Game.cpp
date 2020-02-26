@@ -1,4 +1,4 @@
-#include "Game.h"
+#include "game/Game.h"
 #include <platform/IPlatformFileSystem.h>
 
 game::CGame * Game = nullptr;

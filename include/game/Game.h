@@ -1,12 +1,12 @@
 #ifndef THEPROJECT2_GAME_H
 #define THEPROJECT2_GAME_H
 
-#include "GameStateManager.h"
+#include "../../src/game/GameStateManager.h"
 #include "filesystem/FileSystemInc.h"
 #include "render/RenderInc.h"
+#include "scene/rendering/Renderer.h"
 #include "window/WindowInc.h"
 #include <resource_management/ResourceManagementInc.h>
-#include "scene/rendering/Renderer.h"
 
 namespace game {
 class CGame {
