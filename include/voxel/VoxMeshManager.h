@@ -23,9 +23,13 @@ public:
   void GenAllChunks();
 
 private:
+  enum class FacePlane {
+    XY = 0, XZ, YZ
+  };
+
   void AddVoxelToMesh(render::BaseMesh *mesh, const MNode &node, uint8_t sides);
   void AddQuadToMesh(render::BaseMesh *mesh, const glm::vec3 *face,
-                     const uint8_t color[3]) noexcept;
+                     bool frontFace, FacePlane facePlane, const uint8_t color[3]) noexcept;
   core::SharedPtr<render::BaseMesh> CreateEmptyMesh();
   void ClearMesh(render::BaseMesh *mesh);
   void ClearBuildNodes();
@@ -33,7 +37,7 @@ private:
   void BuildFacesFromMask(render::BaseMesh *mesh, int dim, int z,
                           const glm::vec3 &offset, MaskNode mask[32][32],
                           bool frontFaces);
-  void AddFaceToMesh(render::BaseMesh *mesh, bool frontFace, uint32_t dir,
+  void AddFaceToMesh(render::BaseMesh *mesh, bool frontFace, FacePlane facePlane,
                      uint32_t slice, glm::ivec2 start, glm::ivec2 dims,
                      glm::vec3 offset, uint8_t color[3]);
   void GreedyBuildChunk(render::BaseMesh *mesh, const glm::vec3 &offset);

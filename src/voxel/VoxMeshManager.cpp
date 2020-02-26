@@ -204,7 +204,7 @@ void VoxMeshManager::BuildFacesFromMask(render::BaseMesh *mesh, int dim, int z,
           if (sx <= ex && sy <= ey)
             scanArea.emplace(sx, sy, ex, ey);
 
-          AddFaceToMesh(mesh, frontFace, dim, z, glm::ivec2(i, j),
+          AddFaceToMesh(mesh, frontFace, (FacePlane)dim, z, glm::ivec2(i, j),
                         glm::ivec2(l, h), offset, color);
           clearArea(mask, frontFace, i, j, i + l, j + h);
           faceNumber++;
@@ -216,6 +216,7 @@ void VoxMeshManager::BuildFacesFromMask(render::BaseMesh *mesh, int dim, int z,
   out:;
   }
 }
+
 
 void VoxMeshManager::GreedyBuildChunk(render::BaseMesh *mesh,
                                       const glm::vec3 &offset) {
@@ -238,59 +239,36 @@ void VoxMeshManager::GreedyBuildChunk(render::BaseMesh *mesh,
 }
 
 void VoxMeshManager::AddFaceToMesh(render::BaseMesh *mesh, bool frontFace,
-                                   uint32_t dir, uint32_t slice,
+                                   FacePlane dir, uint32_t slice,
                                    glm::ivec2 start, glm::ivec2 dims,
                                    glm::vec3 offset, uint8_t color[3]) {
   glm::vec3 face[4];
 
   switch (dir) {
-  case 0: // xy
+  case FacePlane::XY: // xy
   {
-    if (frontFace) {
-      face[0] = glm::vec3(start.x, start.y, slice + 1) + offset;
-      face[1] = glm::vec3(start.x + dims.x, start.y, slice + 1) + offset;
-      face[2] =
-          glm::vec3(start.x + dims.x, start.y + dims.y, slice + 1) + offset;
-      face[3] = glm::vec3(start.x, start.y + dims.y, slice + 1) + offset;
-    } else {
-      face[3] = glm::vec3(start.x, start.y, slice) + offset;
-      face[2] = glm::vec3(start.x + dims.x, start.y, slice) + offset;
-      face[1] = glm::vec3(start.x + dims.x, start.y + dims.y, slice) + offset;
-      face[0] = glm::vec3(start.x, start.y + dims.y, slice) + offset;
-    }
-    break;
-  }
-  case 1: // xz
-  {
-    if (frontFace) {
-      face[3] = glm::vec3(start.x, slice + 1, start.y) + offset;
-      face[2] = glm::vec3(start.x + dims.x, slice + 1, start.y) + offset;
-      face[1] =
-          glm::vec3(start.x + dims.x, slice + 1, start.y + dims.y) + offset;
-      face[0] = glm::vec3(start.x, slice + 1, start.y + dims.y) + offset;
-    } else {
-      face[0] = glm::vec3(start.x, slice, start.y) + offset;
-      face[1] = glm::vec3(start.x + dims.x, slice, start.y) + offset;
-      face[2] = glm::vec3(start.x + dims.x, slice, start.y + dims.y) + offset;
-      face[3] = glm::vec3(start.x, slice, start.y + dims.y) + offset;
-    }
+    face[0] = glm::vec3(start.x, start.y, slice + frontFace) + offset;
+    face[1] = glm::vec3(start.x + dims.x, start.y, slice + frontFace) + offset;
+    face[2] = glm::vec3(start.x + dims.x, start.y + dims.y, slice + frontFace) + offset;
+    face[3] = glm::vec3(start.x, start.y + dims.y, slice + frontFace) + offset;
 
     break;
   }
-  case 2: // yz
+  case FacePlane::XZ: // xz
   {
-    if (frontFace) {
-      face[0] = glm::vec3(slice + 1, start.x, start.y) + offset;
-      face[1] = glm::vec3(slice + 1, start.x + dims.x, start.y) + offset;
-      face[2] =
-          glm::vec3(slice + 1, start.x + dims.x, start.y + dims.y) + offset;
-      face[3] = glm::vec3(slice + 1, start.x, start.y + dims.y) + offset;
-    } else {
-      face[3] = glm::vec3(slice, start.x, start.y) + offset;
-      face[2] = glm::vec3(slice, start.x + dims.x, start.y) + offset;
-      face[1] = glm::vec3(slice, start.x + dims.x, start.y + dims.y) + offset;
-      face[0] = glm::vec3(slice, start.x, start.y + dims.y) + offset;
-    }
+    face[0] = glm::vec3(start.x, slice + frontFace, start.y) + offset;
+    face[1] = glm::vec3(start.x + dims.x, slice + frontFace, start.y) + offset;
+    face[2] = glm::vec3(start.x + dims.x, slice + frontFace, start.y + dims.y) + offset;
+    face[3] = glm::vec3(start.x, slice + frontFace, start.y + dims.y) + offset;
+
+    break;
+  }
+  case FacePlane::YZ: // yz
+  {
+    face[0] = glm::vec3(slice + frontFace, start.x, start.y) + offset;
+    face[1] = glm::vec3(slice + frontFace, start.x + dims.x, start.y) + offset;
+    face[2] = glm::vec3(slice + frontFace, start.x + dims.x, start.y + dims.y) + offset;
+    face[3] = glm::vec3(slice + frontFace, start.x, start.y + dims.y) + offset;
 
     break;
   }
@@ -298,11 +276,13 @@ void VoxMeshManager::AddFaceToMesh(render::BaseMesh *mesh, bool frontFace,
     break;
   }
 
-  AddQuadToMesh(mesh, face, color);
+  AddQuadToMesh(mesh, face, frontFace, dir, color);
 }
 
 void VoxMeshManager::AddQuadToMesh(render::BaseMesh *mesh,
                                    const glm::vec3 *face,
+                                   bool frontFace,
+                                   FacePlane facePlane,
                                    const uint8_t color[3]) noexcept {
   auto &ibo = mesh->IndexBuffer;
   auto &vbo = mesh->VertexBuffer;
@@ -322,13 +302,28 @@ void VoxMeshManager::AddQuadToMesh(render::BaseMesh *mesh,
   cbo.emplace_back(col);
   cbo.emplace_back(col);
 
-  ibo.emplace_back(indicesStart);
-  ibo.emplace_back(indicesStart + 2);
-  ibo.emplace_back(indicesStart + 3);
+  if(facePlane == FacePlane::XZ){
+    frontFace = !frontFace;
+  }
 
-  ibo.emplace_back(indicesStart);
-  ibo.emplace_back(indicesStart + 1);
-  ibo.emplace_back(indicesStart + 2);
+  if(frontFace) {
+    ibo.emplace_back(indicesStart);
+    ibo.emplace_back(indicesStart + 2);
+    ibo.emplace_back(indicesStart + 3);
+
+    ibo.emplace_back(indicesStart);
+    ibo.emplace_back(indicesStart + 1);
+    ibo.emplace_back(indicesStart + 2);
+  }
+  else{
+    ibo.emplace_back(indicesStart + 3);
+    ibo.emplace_back(indicesStart + 2);
+    ibo.emplace_back(indicesStart);
+
+    ibo.emplace_back(indicesStart + 2);
+    ibo.emplace_back(indicesStart + 1);
+    ibo.emplace_back(indicesStart);
+  }
 }
 
 uint8_t VoxMeshManager::GetVisibleBuildNodeSides(uint32_t x, uint32_t y,
