@@ -16,6 +16,13 @@ inline void RemoveBit(uint8_t &b, uint8_t b2) { b &= ~b2; }
 
 inline void AddBit(uint32_t &b, uint32_t b2) { b |= b2; }
 
+template <class T>
+void swap(T& a, T&b){
+  T tmp = a;
+  a = b;
+  b = tmp;
+}
+
 enum BITS {
   BIT0 = bit<0>(),
   BIT1 = bit<1>(),

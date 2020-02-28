@@ -21,7 +21,7 @@ MNode::MNode(uint32_t x, uint32_t y, uint32_t z, uint8_t nodeSize) {
   r = g = b = 255;
 }
 
-MNode::MNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint32_t> color, uint8_t nodeSize){
+MNode::MNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint8_t> color, uint8_t nodeSize){
   start = encodeMK(pos.x, pos.y, pos.z);
   r = color.r;
   g = color.g;

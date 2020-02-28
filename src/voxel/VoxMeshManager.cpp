@@ -248,10 +248,10 @@ void VoxMeshManager::AddFaceToMesh(vox::VoxelMesh *mesh, bool frontFace,
   switch (dir) {
   case FacePlane::XY: // xy
   {
-    face[0] = glm::vec3(start.x, start.y, slice + frontFace) + offset;
-    face[1] = glm::vec3(start.x + dims.x, start.y, slice + frontFace) + offset;
-    face[2] = glm::vec3(start.x + dims.x, start.y + dims.y, slice + frontFace) + offset;
-    face[3] = glm::vec3(start.x, start.y + dims.y, slice + frontFace) + offset;
+    face[0] = glm::vec3(start.x + dims.x, start.y + dims.y, slice + frontFace) + offset;
+    face[1] = glm::vec3(start.x, start.y + dims.y, slice + frontFace) + offset;
+    face[2] = glm::vec3(start.x, start.y, slice + frontFace) + offset;
+    face[3] = glm::vec3(start.x + dims.x, start.y, slice + frontFace) + offset;
 
     break;
   }
@@ -266,10 +266,10 @@ void VoxMeshManager::AddFaceToMesh(vox::VoxelMesh *mesh, bool frontFace,
   }
   case FacePlane::YZ: // yz
   {
-    face[0] = glm::vec3(slice + frontFace, start.x, start.y) + offset;
-    face[1] = glm::vec3(slice + frontFace, start.x + dims.x, start.y) + offset;
-    face[2] = glm::vec3(slice + frontFace, start.x + dims.x, start.y + dims.y) + offset;
-    face[3] = glm::vec3(slice + frontFace, start.x, start.y + dims.y) + offset;
+    face[0] = glm::vec3(slice + frontFace, start.x + dims.x, start.y) + offset;
+    face[1] = glm::vec3(slice + frontFace, start.x + dims.x, start.y + dims.y) + offset;
+    face[2] = glm::vec3(slice + frontFace, start.x, start.y + dims.y) + offset;
+    face[3] = glm::vec3(slice + frontFace, start.x, start.y) + offset;
 
     break;
   }
@@ -277,11 +277,12 @@ void VoxMeshManager::AddFaceToMesh(vox::VoxelMesh *mesh, bool frontFace,
     break;
   }
 
-  AddQuadToMesh(mesh, face, frontFace, dir, color);
+  AddQuadToMesh(mesh, face, dims, frontFace, dir, color);
 }
 
 void VoxMeshManager::AddQuadToMesh(vox::VoxelMesh *mesh,
                                    const glm::vec3 *face,
+                                   glm::ivec2 dims,
                                    bool frontFace,
                                    FacePlane facePlane,
                                    const uint8_t color[3]) noexcept {
@@ -298,10 +299,27 @@ void VoxMeshManager::AddQuadToMesh(vox::VoxelMesh *mesh,
   vbo.emplace_back(face[2]);
   vbo.emplace_back(face[3]);
 
-  uvbo.emplace_back(glm::vec3{0.f, 0.f, color[0]});
-  uvbo.emplace_back(glm::vec3{1.f, 0.f, color[0]});
-  uvbo.emplace_back(glm::vec3{1.f, 1.f, color[0]});
-  uvbo.emplace_back(glm::vec3{0.f, 1.f, color[0]});
+  float texId;
+
+  if(facePlane == FacePlane::XZ){
+    if(frontFace)
+      texId = color[0];
+    else
+      texId = color[2];
+  }
+  else{
+    texId = color[1];
+  }
+
+  if(facePlane == FacePlane::YZ){
+    util::swap(dims.x, dims.y);
+  }
+
+  uvbo.emplace_back(glm::vec3{0.f, 0.f, texId});
+  uvbo.emplace_back(glm::vec3{1.f * dims.x, 0.f, texId});
+  uvbo.emplace_back(glm::vec3{1.f * dims.x, 1.f * dims.y, texId});
+  uvbo.emplace_back(glm::vec3{0.f, 1.f * dims.y, texId});
+
 
   if(facePlane == FacePlane::XZ){
     frontFace = !frontFace;

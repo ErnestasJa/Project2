@@ -28,7 +28,7 @@ private:
   };
 
   void AddVoxelToMesh(vox::VoxelMesh *mesh, const MNode &node, uint8_t sides);
-  void AddQuadToMesh(vox::VoxelMesh *mesh, const glm::vec3 *face,
+  void AddQuadToMesh(vox::VoxelMesh *mesh, const glm::vec3 *face, glm::ivec2 dims,
                      bool frontFace, FacePlane facePlane, const uint8_t color[3]) noexcept;
   core::SharedPtr<vox::VoxelMesh> CreateEmptyMesh();
   void ClearMesh(vox::VoxelMesh *mesh);

@@ -23,7 +23,6 @@ bool GameState::Initialize() {
 
   m_playerActor = core::Move(Game->GetResourceManager()->LoadAssimp(
       "ProjectSteve.fbx", "steve.png", "phong_anim"));
-  m_playerActor->SetPosition({128,150,128});
 
   m_worldAtlas = Game->GetImageLoader()->LoadAtlasAs2DTexture(io::Path("resources/textures/block_atlas.png"), 48);
 
@@ -34,7 +33,7 @@ bool GameState::Initialize() {
   mapGen.Generate(m_octree.get());
   m_meshManager->GenAllChunks();
 
-  m_player = core::MakeUnique<game::Player>(m_playerActor, m_camera, m_collisionManager.get(), glm::vec3{128,150,128});
+  m_player = core::MakeUnique<game::Player>(m_playerActor, m_camera, m_collisionManager.get(), glm::vec3{0,3,0});
 
   return true;
 }

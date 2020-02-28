@@ -13,7 +13,7 @@ public:
 
   MNode(const MNode &node) = default;
   MNode(MNode &&n) noexcept;
-  MNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint32_t> color, uint8_t nodeSize = 1);
+  MNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint8_t> color, uint8_t nodeSize = 1);
   MNode(uint32_t x, uint32_t y, uint32_t z, uint8_t nodeSize = 1);
   MNode(uint32_t morton, uint8_t nodeSize, uint8_t red, uint8_t green,
         uint8_t blue);
