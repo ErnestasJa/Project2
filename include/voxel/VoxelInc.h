@@ -11,5 +11,6 @@
 #include "VoxelMesh.h"
 #include "VoxMeshManager.h"
 #include "CollisionManager.h"
+#include "CollisionInfo.h"
 
 #endif // THEPROJECT2_INCLUDE_VOXEL_VOXELINC_H_

@@ -19,6 +19,15 @@ void MortonOctree::AddNode(MNode node) {
   m_nodes.insert(lb, core::Move(node));
 }
 
+void MortonOctree::Remove(MNode node) {
+  auto lb = std::lower_bound(m_nodes.begin(), m_nodes.end(), MNode(node.start), NodeSortPredicate);
+  if(lb != m_nodes.end(), lb->start == node.start)
+  {
+    lb->size = -1;
+  }
+
+}
+
 void MortonOctree::AddOrphanNode(MNode node) {
   m_nodes.push_back(core::Move(node));
 }

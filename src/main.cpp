@@ -5,7 +5,7 @@
 int main() {
 
   render::SWindowDefinition wDef;
-  wDef.Dimensions = {1280, 720};
+  wDef.Dimensions = {1920, 1080};
   wDef.Title = "TheProject2";
   wDef.Fullscreen = false;
 
@@ -17,6 +17,7 @@ int main() {
 
   auto stateManager = Game->GetGameStateManager();
   auto startingState = game::state::GameState::Create();
+  //auto startingState = core::MakeUnique<game::state::AnimationPreviewState>();
   auto startingStateName = startingState->GetName();
 
   stateManager->Register(core::Move(startingState), startingStateName);

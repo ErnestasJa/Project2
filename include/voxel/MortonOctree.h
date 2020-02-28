@@ -21,6 +21,7 @@ public:
 
 private:
   core::Vector<MNode> m_nodes;
+  void Remove(MNode node);
 };
 }
 

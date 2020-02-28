@@ -12,6 +12,8 @@ bool GameState::Initialize() {
   m_camera = core::MakeShared<render::OrbitCamera>();
   m_camera->SetPosition({128,150,128});
   m_camera->SetRotation({80,0,0});
+  m_camera->SetDistance(6);
+  m_camera->SetFOV(35);
 
   Game->GetRenderer()->GetRenderContext()->SetCurrentCamera(m_camera);
   m_inputHandlerHandle =
@@ -33,7 +35,7 @@ bool GameState::Initialize() {
   mapGen.Generate(m_octree.get());
   m_meshManager->GenAllChunks();
 
-  m_player = core::MakeUnique<game::Player>(m_playerActor, m_camera, m_collisionManager.get(), glm::vec3{0,3,0});
+  m_player = core::MakeUnique<game::Player>(m_playerActor, m_camera, m_collisionManager.get(), glm::vec3{56,128,56});
 
   return true;
 }
@@ -150,6 +152,21 @@ bool GameState::OnMouseMoveDelta(const int32_t x,
 
 core::UniquePtr<IGameState> GameState::Create() {
   return core::MakeUnique<GameState>();
+}
+bool GameState::OnMouseUp(const input::MouseButton &key) {
+  if(key == input::MouseButtons::Left){
+    auto playerPos = m_player->GetPosition();
+    auto cameraPos = m_player->GetPosition();
+    auto dir = playerPos - cameraPos;
+    auto ci = vox::CollisionInfo(playerPos, playerPos+dir);
+    m_collisionManager->Collide(ci, 0, glm::ivec3(playerPos));
+
+    if(ci.HasCollided())
+    {
+    }
+  }
+
+  return InputHandler::OnMouseUp(key);
 }
 
 }

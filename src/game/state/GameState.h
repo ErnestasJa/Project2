@@ -24,6 +24,7 @@ protected:
   void RenderWorld();
   void HandleKeyInput(float deltaSeconds);
   bool OnMouseMoveDelta(const int32_t x, const int32_t y) override;
+  bool OnMouseUp(const input::MouseButton& key) override;
 
 protected:
   util::Timer m_timer;
