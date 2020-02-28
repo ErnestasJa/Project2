@@ -8,6 +8,7 @@
 #include "VoxelSide.h"
 #include "Morton.h"
 #include "MortonOctree.h"
+#include "VoxelMesh.h"
 #include "VoxMeshManager.h"
 #include "CollisionManager.h"
 

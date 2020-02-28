@@ -25,7 +25,10 @@ bool GameState::Initialize() {
       "ProjectSteve.fbx", "steve.png", "phong_anim"));
   m_playerActor->SetPosition({128,150,128});
 
-  m_worldMaterial = Game->GetResourceManager()->LoadMaterial("resources/shaders/phong_color");
+  m_worldAtlas = Game->GetImageLoader()->LoadAtlasAs2DTexture(io::Path("resources/textures/block_atlas.png"), 48);
+
+  m_worldMaterial = Game->GetResourceManager()->LoadMaterial("resources/shaders/voxel");
+  m_worldMaterial->SetTexture(0, m_worldAtlas.get());
   vox::map::RandomMapGenerator mapGen({256, 128, 256});
 
   mapGen.Generate(m_octree.get());
@@ -42,8 +45,8 @@ core::String GameState::GetName() { return "Game"; }
 
 void GameState::RenderWorld() {
   m_worldMaterial->Use();
-
   m_worldMaterial->SetMat4("MVP", m_camera->GetProjection() * m_camera->GetView() * glm::mat4(1));
+  Game->GetRenderer()->SetActiveTextures(m_worldMaterial->GetTextures());
 
   for (auto chunk : m_meshManager->GetMeshes()) {
     chunk.second->Render();

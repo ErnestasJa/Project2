@@ -19,11 +19,8 @@ void RandomMapGenerator::Generate(vox::MortonOctree *octree) {
       uint32_t height = noise.octaveNoise0_1(x / float(m_size.x), z/ float(m_size.z), 16) * m_size.y;
 
       for(uint32_t y = 0; y < height; y++){
-        auto heightFactor = y / (float)m_size.y;
-        auto green = uint32_t(206 * heightFactor);
-        auto blue = uint32_t(100 * (1 - heightFactor)) ;
-
-        octree->AddOrphanNode(MNode({x,y,z}, {50,50 + green,50 + blue}));
+        auto texture = uint32_t(0); //uint32_t((float(y) / float(height)) * 3);
+        octree->AddOrphanNode(MNode({x,y,z}, {texture,0,0}));
       }
     }
   }

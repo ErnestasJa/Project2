@@ -36,6 +36,7 @@ protected:
   core::SharedPtr<material::BaseMaterial> m_worldMaterial;
   core::UniquePtr<game::Player> m_player;
   bool m_shouldExitState = false;
+  core::UniquePtr<render::ITexture> m_worldAtlas;
 };
 
 

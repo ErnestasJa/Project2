@@ -2,6 +2,7 @@
 #include "voxel/Morton.h"
 #include "voxel/MortonOctree.h"
 #include "voxel/OctreeConstants.h"
+#include "voxel/VoxelMesh.h"
 #include <render/BaseMesh.h>
 #include <render/IRenderer.h>
 #include "stdlib.h"
@@ -15,7 +16,7 @@ VoxMeshManager::VoxMeshManager(render::IRenderer *renderer,
 
 VoxMeshManager::~VoxMeshManager() {}
 
-std::unordered_map<uint32_t, core::SharedPtr<render::BaseMesh>> &
+std::unordered_map<uint32_t, core::SharedPtr<vox::VoxelMesh>> &
 VoxMeshManager::GetMeshes() {
   return m_map;
 }
@@ -166,7 +167,7 @@ int heightr(int x, int y, int l, const Rect &r, MaskNode mask[32][32],
   return h - y;
 }
 
-void VoxMeshManager::BuildFacesFromMask(render::BaseMesh *mesh, int dim, int z,
+void VoxMeshManager::BuildFacesFromMask(vox::VoxelMesh *mesh, int dim, int z,
                                         const glm::vec3 &offset,
                                         MaskNode mask[32][32], bool frontFace) {
   std::stack<Rect> scanArea;
@@ -218,7 +219,7 @@ void VoxMeshManager::BuildFacesFromMask(render::BaseMesh *mesh, int dim, int z,
 }
 
 
-void VoxMeshManager::GreedyBuildChunk(render::BaseMesh *mesh,
+void VoxMeshManager::GreedyBuildChunk(vox::VoxelMesh *mesh,
                                       const glm::vec3 &offset) {
   MaskNode mask[32][32];
 
@@ -238,7 +239,7 @@ void VoxMeshManager::GreedyBuildChunk(render::BaseMesh *mesh,
   }
 }
 
-void VoxMeshManager::AddFaceToMesh(render::BaseMesh *mesh, bool frontFace,
+void VoxMeshManager::AddFaceToMesh(vox::VoxelMesh *mesh, bool frontFace,
                                    FacePlane dir, uint32_t slice,
                                    glm::ivec2 start, glm::ivec2 dims,
                                    glm::vec3 offset, uint8_t color[3]) {
@@ -279,14 +280,14 @@ void VoxMeshManager::AddFaceToMesh(render::BaseMesh *mesh, bool frontFace,
   AddQuadToMesh(mesh, face, frontFace, dir, color);
 }
 
-void VoxMeshManager::AddQuadToMesh(render::BaseMesh *mesh,
+void VoxMeshManager::AddQuadToMesh(vox::VoxelMesh *mesh,
                                    const glm::vec3 *face,
                                    bool frontFace,
                                    FacePlane facePlane,
                                    const uint8_t color[3]) noexcept {
-  auto &ibo = mesh->IndexBuffer;
-  auto &vbo = mesh->VertexBuffer;
-  auto &cbo = mesh->ColorBuffer;
+  auto &ibo = mesh->Indices;
+  auto &vbo = mesh->Vertices;
+  auto &uvbo = mesh->UVs;
 
   uint32_t indicesStart = vbo.size();
   glm::vec3 col(((float)color[0]) / 255.0f, ((float)color[1]) / 255.0f,
@@ -297,10 +298,10 @@ void VoxMeshManager::AddQuadToMesh(render::BaseMesh *mesh,
   vbo.emplace_back(face[2]);
   vbo.emplace_back(face[3]);
 
-  cbo.emplace_back(col);
-  cbo.emplace_back(col);
-  cbo.emplace_back(col);
-  cbo.emplace_back(col);
+  uvbo.emplace_back(glm::vec3{0.f, 0.f, color[0]});
+  uvbo.emplace_back(glm::vec3{1.f, 0.f, color[0]});
+  uvbo.emplace_back(glm::vec3{1.f, 1.f, color[0]});
+  uvbo.emplace_back(glm::vec3{0.f, 1.f, color[0]});
 
   if(facePlane == FacePlane::XZ){
     frontFace = !frontFace;
@@ -388,11 +389,11 @@ void VoxMeshManager::GenAllChunks() {
     it.second->Upload();
 }
 
-void VoxMeshManager::AddVoxelToMesh(render::BaseMesh *mesh, const MNode &node,
+void VoxMeshManager::AddVoxelToMesh(vox::VoxelMesh *mesh, const MNode &node,
                                     uint8_t sides) {
-  auto &ibo = mesh->IndexBuffer;
-  auto &vbo = mesh->VertexBuffer;
-  auto &cbo = mesh->ColorBuffer;
+  /*auto &ibo = mesh->Indices;
+  auto &vbo = mesh->Vertices;
+  auto &cbo = mesh->UVs;
 
   uint32_t x, y, z;
   decodeMK(node.start, x, y, z);
@@ -490,16 +491,29 @@ void VoxMeshManager::AddVoxelToMesh(render::BaseMesh *mesh, const MNode &node,
     ibo.push_back(si + 4);
     ibo.push_back(si + 6);
   }
+   */
 }
 
-core::SharedPtr<render::BaseMesh> VoxMeshManager::CreateEmptyMesh() {
-  return m_renderer->CreateBaseMesh();
+core::SharedPtr<vox::VoxelMesh> VoxMeshManager::CreateEmptyMesh() {
+  core::Vector<render::BufferDescriptor> bufferDescriptors = {
+      render::BufferDescriptor{ 1, render::BufferObjectType::index,
+                                render::BufferComponentDataType::uint32, 0 },
+
+      render::BufferDescriptor{ 3, render::BufferObjectType::vertex,
+                                render::BufferComponentDataType::float32, 0 },
+
+      render::BufferDescriptor{ 3, render::BufferObjectType::vertex,
+                                render::BufferComponentDataType::float32, 1 },
+  };
+
+  auto vao = m_renderer->CreateBufferArrayObject(bufferDescriptors);
+  return core::MakeShared<vox::VoxelMesh>(vao);
 }
 
-void VoxMeshManager::ClearMesh(render::BaseMesh *mesh) {
-  mesh->IndexBuffer.clear();
-  mesh->VertexBuffer.clear();
-  mesh->ColorBuffer.clear();
+void VoxMeshManager::ClearMesh(vox::VoxelMesh *mesh) {
+  mesh->Indices.clear();
+  mesh->Vertices.clear();
+  mesh->UVs.clear();
 }
 
 void VoxMeshManager::RebuildChunk(uint32_t chunk) {
@@ -519,7 +533,7 @@ void VoxMeshManager::RebuildChunk(uint32_t chunk) {
     return;
   }
 
-  render::BaseMesh *mesh = nullptr;
+  vox::VoxelMesh *mesh = nullptr;
 
   if (mit == m_map.end()) {
     auto m = CreateEmptyMesh();

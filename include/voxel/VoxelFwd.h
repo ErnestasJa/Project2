@@ -3,6 +3,7 @@
 
 namespace vox {
 class MortonOctree;
+class VoxelMesh;
 class VoxMeshManager;
 class CollisionManager;
 struct CollisionInfo;

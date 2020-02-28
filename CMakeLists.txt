@@ -48,7 +48,7 @@ set(PROJECT_SOURCES
         "${SRC_PATH}/object/Actor.cpp"
         "${SRC_PATH}/object/AnimatedMeshActor.cpp"
         "${SRC_PATH}/scene/rendering/Renderer.cpp"
-        "${SRC_PATH}/game/state/GameState.cpp" src/voxel/map/RandomMapGenerator.cpp include/voxel/map/RandomMapGenerator.h)
+        "${SRC_PATH}/game/state/GameState.cpp" src/voxel/map/RandomMapGenerator.cpp include/voxel/map/RandomMapGenerator.h src/voxel/VoxelMesh.cpp include/voxel/VoxelMesh.h)
 
 
 include_directories (${INCLUDE_PATH})
