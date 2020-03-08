@@ -9,7 +9,7 @@ class CollisionManager;
 struct CollisionInfo;
 struct AABBCollisionInfo;
 struct MaskNode;
-struct MNode;
+struct VoxNode;
 
 namespace map {
 class RandomMapGenerator;

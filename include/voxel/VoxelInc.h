@@ -2,15 +2,16 @@
 #ifndef THEPROJECT2_INCLUDE_VOXEL_VOXELINC_H_
 #define THEPROJECT2_INCLUDE_VOXEL_VOXELINC_H_
 
-#include "OctreeConstants.h"
-#include "MNode.h"
+#include "CollisionInfo.h"
+#include "CollisionManager.h"
 #include "MNodeUtil.h"
-#include "VoxelSide.h"
 #include "Morton.h"
 #include "MortonOctree.h"
-#include "VoxelMesh.h"
+#include "OctreeConstants.h"
+#include "VoxelUtils.h"
 #include "VoxMeshManager.h"
-#include "CollisionManager.h"
-#include "CollisionInfo.h"
+#include "VoxNode.h"
+#include "VoxelMesh.h"
+#include "VoxelSide.h"
 
 #endif // THEPROJECT2_INCLUDE_VOXEL_VOXELINC_H_

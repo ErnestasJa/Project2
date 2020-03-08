@@ -22,11 +22,14 @@ public:
   core::Vector<AABBCollisionInfo>
   CheckCollisionSwept(const core::AxisAlignedBoundingBox &aabb,
                       const glm::vec3 &vel);
-  void Collide(CollisionInfo &colInfo, uint32_t depthLevel,
-               const glm::ivec3 &octStart);
   VoxelSide GetCollisionSide(glm::vec3 voxPos, glm::vec3 rayStart,
                              glm::vec3 rayDirection);
 
+  void Collide(CollisionInfo &colInfo);
+
+protected:
+  void Collide(CollisionInfo &colInfo, uint32_t depthLevel,
+               const glm::ivec3 &octStart);
 protected:
   core::SharedPtr<MortonOctree> m_octree;
   uint32_t Depth; /// just until we get rid of templated octree.

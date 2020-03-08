@@ -36,7 +36,7 @@ void RandomGen(vox::MortonOctree *octree, glm::uvec3 size){
 
       for(uint32_t y = 0; y < height; y++){
         auto texture = uint32_t(0); //uint32_t((float(y) / float(height)) * 3);
-        octree->AddOrphanNode(MNode({x,y,z}, tex));
+        octree->AddOrphanNode(VoxNode({x,y,z}, tex));
       }
     }
   }
@@ -45,7 +45,7 @@ void RandomGen(vox::MortonOctree *octree, glm::uvec3 size){
 }
 
 void SingleBlock(vox::MortonOctree *octree){
-  octree->AddOrphanNode(MNode({0,0,0}, GetTexture(0)));
+  octree->AddOrphanNode(VoxNode({0,0,0}, GetTexture(0)));
   octree->SortLeafNodes();
 }
 

@@ -1,8 +1,10 @@
 #include "GameState.h"
 #include "game/Game.h"
+#include <glm/gtx/matrix_decompose.hpp>
 
 #include "voxel/VoxelInc.h"
 #include "voxel/map/RandomMapGenerator.h"
+#include "render/animation/AnimationController.h"
 
 namespace game::state {
 bool GameState::Initialize() {
@@ -15,6 +17,12 @@ bool GameState::Initialize() {
   m_camera->SetDistance(6);
   m_camera->SetFOV(35);
 
+
+  m_debugLineMesh = core::MakeUnique<render::debug::DebugLineMesh>(
+      core::Move(Game->GetRenderer()->CreateBaseMesh()),
+      Game->GetResourceManager()->LoadMaterial("Resources/shaders/debug")
+      );
+
   Game->GetRenderer()->GetRenderContext()->SetCurrentCamera(m_camera);
   m_inputHandlerHandle =
       Game->GetWindow()->GetInputDevice()->AddInputHandler(this);
@@ -25,6 +33,7 @@ bool GameState::Initialize() {
 
   m_playerActor = core::Move(Game->GetResourceManager()->LoadAssimp(
       "ProjectSteve.fbx", "steve.png", "phong_anim"));
+  m_weaponActor = Game->GetResourceManager()->LoadAssimp("pickaxe.fbx", "mc_gear.png", "phong");
 
   m_worldAtlas = Game->GetImageLoader()->LoadAtlasAs2DTexture(io::Path("resources/textures/block_atlas.png"), 48);
 
@@ -47,12 +56,35 @@ core::String GameState::GetName() { return "Game"; }
 void GameState::RenderWorld() {
   m_worldMaterial->Use();
   m_worldMaterial->SetMat4("MVP", m_camera->GetProjection() * m_camera->GetView() * glm::mat4(1));
+
+  Game->GetRenderer()->GetRenderContext()->SetDepthTest(m_worldMaterial->UseDepthTest);
   Game->GetRenderer()->SetActiveTextures(m_worldMaterial->GetTextures());
 
   for (auto chunk : m_meshManager->GetMeshes()) {
     chunk.second->Render();
   }
 }
+
+
+void GameState::RenderPlayer(float deltaSeconds) {
+  auto weaponSlotTransform = m_playerActor->GetAnimationController()->GetBoneTransformation("weapon");
+  auto weaponTransform = m_weaponActor->GetArmature().GetBones()[0].offset;
+
+  auto weapTransform = (m_playerActor->GetTransform() * weaponSlotTransform * weaponTransform);
+  glm::vec3 pos, scale, skew;
+  glm::quat rot;
+  glm::vec4 perspective;
+
+  glm::decompose(weapTransform, scale, rot, pos, skew, perspective);
+
+  m_weaponActor->SetPosition( pos);
+  m_weaponActor->SetRotation(glm::eulerAngles(rot));
+
+  Game->GetSceneRenderer()->Render(m_weaponActor.get());
+  Game->GetSceneRenderer()->Render(m_playerActor.get());
+  Game->GetRenderer()->RenderMesh(m_debugLineMesh->GetMesh(), m_debugLineMesh->GetMaterial(), glm::mat4(1));
+}
+
 
 bool GameState::Run() {
   Game->GetRenderer()->BeginFrame();
@@ -65,13 +97,12 @@ bool GameState::Run() {
 
   HandleKeyInput(delta);
   RenderWorld();
-  Game->GetSceneRenderer()->Render(m_playerActor.get());
-
+  RenderPlayer(delta);
   return !m_shouldExitState;
 }
 
 void GameState::HandleKeyInput(float deltaSeconds) {
-  m_shouldExitState |= IsKeyDown(input::Keys::Esc);
+  m_shouldExitState |= IsKeyDown(input::Keys::ESC);
 
   auto look = m_camera->GetLocalZ();
   auto right = m_camera->GetLocalX();
@@ -83,7 +114,7 @@ void GameState::HandleKeyInput(float deltaSeconds) {
   auto sk = IsKeyDown(input::Keys::S);
   auto dk = IsKeyDown(input::Keys::D);
   auto ak = IsKeyDown(input::Keys::A);
-  auto supaSpeed = IsKeyDown(input::Keys::X);
+  auto supaSpeed = IsKeyDown(input::Keys::L_SHIFT);
 
   glm::vec3 forwardVelocity(0), strafeVelocity(0);
 
@@ -132,8 +163,21 @@ void GameState::HandleKeyInput(float deltaSeconds) {
     m_player->GetVelocity().z = 0;
   }
 
-  if(IsKeyDown(input::Keys::Space)){
+  if(IsKeyDown(input::Keys::SPACE)){
     m_player->Jump(150);
+  }
+
+  if(IsMouseButtonDown(input::MouseButtons::Left)){
+    auto playerPos = m_player->GetPosition();
+    auto cameraPos = m_camera->GetPosition();
+    glm::vec3 direction = glm::normalize(m_camera->GetDirection()) * 5.f;
+
+    m_debugLineMesh->Clear();
+    m_debugLineMesh->AddLine(playerPos, playerPos + direction, {255,0,0});
+    //m_debugLineMesh->AddLine(playerPos, playerPos + glm::vec3{0.f ,10.0f, 0.f}, {255,0,0});
+    m_debugLineMesh->Upload();
+
+    elog::LogInfo("Mouse down");
   }
 }
 
@@ -153,20 +197,35 @@ bool GameState::OnMouseMoveDelta(const int32_t x,
 core::UniquePtr<IGameState> GameState::Create() {
   return core::MakeUnique<GameState>();
 }
+
+
+
 bool GameState::OnMouseUp(const input::MouseButton &key) {
   if(key == input::MouseButtons::Left){
+    elog::LogInfo("Mouse up");
+    m_debugLineMesh->Clear();
+
     auto playerPos = m_player->GetPosition();
-    auto cameraPos = m_player->GetPosition();
-    auto dir = playerPos - cameraPos;
-    auto ci = vox::CollisionInfo(playerPos, playerPos+dir);
-    m_collisionManager->Collide(ci, 0, glm::ivec3(playerPos));
+    glm::vec3 direction = glm::normalize(m_camera->GetDirection()) * 5.f;
+    auto ci = vox::CollisionInfo(playerPos, direction);
+    m_collisionManager->Collide(ci);
 
     if(ci.HasCollided())
     {
+      uint32_t nodeX, nodeY, nodeZ;
+      vox::decodeMK(ci.node.start, nodeX, nodeY, nodeZ);
+
+      m_octree->RemoveNode(nodeX, nodeY, nodeZ);
+
+      uint32_t chunk = vox::utils::GetChunk(ci.node.start);
+      m_meshManager->RebuildChunk(chunk);
     }
   }
 
-  return InputHandler::OnMouseUp(key);
+  return GameInputHandler::OnMouseUp(key);
 }
+bool GameState::OnMouseDown(const input::MouseButton &key) {
 
+  return GameInputHandler::OnMouseDown(key);
+}
 }

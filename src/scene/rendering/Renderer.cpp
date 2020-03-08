@@ -17,6 +17,8 @@ void Renderer::Render(game::obj::AnimatedMeshActor *actor) {
   auto material = actor->GetMaterial();
   auto cam = m_renderer->GetRenderContext()->GetCurrentCamera();
 
+  m_renderer->GetRenderContext()->SetDepthTest(material->UseDepthTest);
+
   material->Use();
   material->SetMat4("MVP", cam->GetProjection() * cam->GetView() * actor->GetTransform());
 

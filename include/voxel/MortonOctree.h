@@ -1,27 +1,29 @@
 #ifndef MortonOctree_H
 #define	MortonOctree_H
 
-#include "MNode.h"
 #include "OctreeConstants.h"
+#include "VoxNode.h"
 #include "VoxelSide.h"
 
 namespace vox {
 class MortonOctree {
 public:
-  void AddNode(MNode node);
-  void AddOrphanNode(MNode node);
+  void AddNode(VoxNode node);
+  void AddOrphanNode(VoxNode node);
   bool IsSorted();
   void SortLeafNodes();
   void RemoveDuplicateNodes();
   bool CheckNodeFloat(float x, float y, float z);
   bool CheckNode(uint32_t x, uint32_t y, uint32_t z);
   uint8_t GetVisibleSides(uint32_t x, uint32_t y, uint32_t z,
-                          core::Vector<MNode>::iterator nodeIt);
-  core::Vector<MNode> &GetChildNodes();
+                          core::Vector<VoxNode>::iterator nodeIt);
+  core::Vector<VoxNode> &GetNodes();
+
+  bool RemoveNode(uint32_t x, uint32_t y, uint32_t z);
 
 private:
-  core::Vector<MNode> m_nodes;
-  void Remove(MNode node);
+  core::Vector<VoxNode> m_nodes;
+  void Remove(VoxNode node);
 };
 }
 

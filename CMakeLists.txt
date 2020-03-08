@@ -32,7 +32,7 @@ set(PROJECT_SOURCES
         "${SRC_PATH}/main.cpp"
         "${SRC_PATH}/utils/Timer.cpp"
         "${SRC_PATH}/voxel/VoxelSide.cpp"
-        "${SRC_PATH}/voxel/MNode.cpp"
+        "${SRC_PATH}/voxel/VoxNode.cpp"
         "${SRC_PATH}/voxel/MNodeUtil.cpp"
         "${SRC_PATH}/voxel/MortonOctree.cpp"
         "${SRC_PATH}/voxel/VoxMeshManager.cpp"
@@ -48,7 +48,9 @@ set(PROJECT_SOURCES
         "${SRC_PATH}/object/Actor.cpp"
         "${SRC_PATH}/object/AnimatedMeshActor.cpp"
         "${SRC_PATH}/scene/rendering/Renderer.cpp"
-        "${SRC_PATH}/game/state/GameState.cpp" src/voxel/map/RandomMapGenerator.cpp include/voxel/map/RandomMapGenerator.h src/voxel/VoxelMesh.cpp include/voxel/VoxelMesh.h)
+        "${SRC_PATH}/game/state/GameState.cpp"
+        src/voxel/map/RandomMapGenerator.cpp
+        src/voxel/VoxelMesh.cpp)
 
 
 include_directories (${INCLUDE_PATH})

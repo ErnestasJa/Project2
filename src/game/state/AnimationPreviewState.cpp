@@ -98,7 +98,7 @@ void AnimationPreviewState::Render(){
 }
 
 void AnimationPreviewState::HandleKeyInput(float deltaSeconds) {
-  m_shouldExitState |= IsKeyDown(input::Keys::Esc);
+  m_shouldExitState |= IsKeyDown(input::Keys::ESC);
 
   auto look = m_camera->GetLocalZ();
   auto right = m_camera->GetLocalX();

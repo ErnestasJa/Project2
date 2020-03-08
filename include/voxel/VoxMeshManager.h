@@ -1,10 +1,10 @@
 #ifndef VOXMESHGENERATOR_H
 #define VOXMESHGENERATOR_H
 
-#include "voxel/VoxelFwd.h"
 #include "render/RenderFwd.h"
 #include "util/Bit.h"
-#include "voxel/MNode.h"
+#include "voxel/VoxNode.h"
+#include "voxel/VoxelFwd.h"
 
 typedef std::unordered_map<uint32_t, core::SharedPtr<vox::VoxelMesh>>::iterator MapIterator;
 typedef std::unordered_map<uint32_t, core::SharedPtr<vox::VoxelMesh>> Map;
@@ -27,7 +27,7 @@ private:
     XY = 0, XZ, YZ
   };
 
-  void AddVoxelToMesh(vox::VoxelMesh *mesh, const MNode &node, uint8_t sides);
+  void AddVoxelToMesh(vox::VoxelMesh *mesh, const VoxNode &node, uint8_t sides);
   void AddQuadToMesh(vox::VoxelMesh *mesh, const glm::vec3 *face, glm::ivec2 dims,
                      bool frontFace, FacePlane facePlane, const uint8_t color[3]) noexcept;
   core::SharedPtr<vox::VoxelMesh> CreateEmptyMesh();
@@ -41,13 +41,13 @@ private:
                      uint32_t slice, glm::ivec2 start, glm::ivec2 dims,
                      glm::vec3 offset, uint8_t color[3]);
   void GreedyBuildChunk(vox::VoxelMesh *mesh, const glm::vec3 &offset);
-  void SetBuildNode(const MNode &node);
+  void SetBuildNode(const VoxNode &node);
   uint8_t GetVisibleBuildNodeSides(uint32_t x, uint32_t y, uint32_t z);
-  MNode GetBuildNode(uint32_t x, uint32_t y, uint32_t z);
+  VoxNode GetBuildNode(uint32_t x, uint32_t y, uint32_t z);
   bool CheckBuildNode(uint32_t x, uint32_t y, uint32_t z);
 
 private:
-  MNode m_buildNodes[32][32][32];
+  VoxNode m_buildNodes[32][32][32];
   core::UnorderedMap<uint32_t, core::SharedPtr<vox::VoxelMesh>> m_map;
   core::SharedPtr<MortonOctree> m_octree;
   render::IRenderer *m_renderer;

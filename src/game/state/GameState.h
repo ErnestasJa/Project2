@@ -22,15 +22,19 @@ public:
 
 protected:
   void RenderWorld();
+  void RenderPlayer(float deltaSeconds);
   void HandleKeyInput(float deltaSeconds);
   bool OnMouseMoveDelta(const int32_t x, const int32_t y) override;
+  bool OnMouseDown(const input::MouseButton& key) override;
   bool OnMouseUp(const input::MouseButton& key) override;
 
 protected:
   util::Timer m_timer;
   input::InputHandlerHandle m_inputHandlerHandle;
   core::SharedPtr<render::OrbitCamera> m_camera;
+  core::UniquePtr<render::debug::DebugLineMesh> m_debugLineMesh;
   core::SharedPtr<game::obj::AnimatedMeshActor> m_playerActor;
+  core::SharedPtr<game::obj::AnimatedMeshActor> m_weaponActor;
   core::SharedPtr<vox::MortonOctree> m_octree;
   core::UniquePtr<vox::VoxMeshManager> m_meshManager;
   core::UniquePtr<vox::CollisionManager> m_collisionManager;

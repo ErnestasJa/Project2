@@ -44,7 +44,7 @@ bool CollisionManager::CheckCollision(const glm::vec3 &bmin,
 
 bool CollisionManager::CheckCollision(
     const core::AxisAlignedBoundingBox &aabb) {
-  core::Vector<MNode> &m_nodes = m_octree->GetChildNodes();
+  core::Vector<VoxNode> &m_nodes = m_octree->GetNodes();
 
   auto clamp = [](float &x) {
     if (x < 0)
@@ -66,8 +66,8 @@ bool CollisionManager::CheckCollision(
   uint32_t mortonMin = encodeMK(min.x, min.y, min.z);
   uint32_t mortonMax = encodeMK(max.x, max.y, max.z);
 
-  auto low = std::lower_bound(m_nodes.begin(), m_nodes.end(), MNode(mortonMin));
-  auto hi = std::lower_bound(m_nodes.begin(), m_nodes.end(), MNode(mortonMax));
+  auto low = std::lower_bound(m_nodes.begin(), m_nodes.end(), VoxNode(mortonMin));
+  auto hi = std::lower_bound(m_nodes.begin(), m_nodes.end(), VoxNode(mortonMax));
 
   if (hi != m_nodes.end())
     hi++;
@@ -90,7 +90,7 @@ bool CollisionManager::CheckCollision(
 
 bool CollisionManager::CheckCollisionB(
     const core::AxisAlignedBoundingBox &aabb) {
-  core::Vector<MNode> &m_nodes = m_octree->GetChildNodes();
+  core::Vector<VoxNode> &m_nodes = m_octree->GetNodes();
 
   auto clamp = [](float &x) {
     if (x < 0)
@@ -112,7 +112,8 @@ bool CollisionManager::CheckCollisionB(
   for (uint32_t z = min.z; z < max.z; z++)
     for (uint32_t y = min.y; y < max.y; y++)
       for (uint32_t x = min.x; x < max.x; x++)
-        if (std::binary_search(m_nodes.begin(), m_nodes.end(), MNode(x, y, z)))
+        if (std::binary_search(m_nodes.begin(), m_nodes.end(),
+                               VoxNode(x, y, z)))
           return true;
 
   return false;
@@ -137,7 +138,7 @@ CollisionManager::CheckCollisionSwept(const core::AxisAlignedBoundingBox &aabb,
   name.c_str(), mi.x, mi.y, mi.z, mx.x, mx.y, mx.z);
   };*/
 
-  core::Vector<MNode> &m_nodes = m_octree->GetChildNodes();
+  core::Vector<VoxNode> &m_nodes = m_octree->GetNodes();
 
   core::Vector<AABBCollisionInfo> infoVec;
 
@@ -167,7 +168,7 @@ CollisionManager::CheckCollisionSwept(const core::AxisAlignedBoundingBox &aabb,
     for (uint32_t y = min.y; y < max.y; y++)
       for (uint32_t x = min.x; x < max.x; x++)
         if (std::binary_search(m_nodes.begin(), m_nodes.end(),
-                               MNode(x, y, z))) {
+                               VoxNode(x, y, z))) {
           core::AxisAlignedBoundingBox b1(glm::vec3(x + 0.5, y + 0.5, z + 0.5),
                                           glm::vec3(0.5, 0.5, 0.5));
           AABBCollisionInfo info;
@@ -182,13 +183,19 @@ CollisionManager::CheckCollisionSwept(const core::AxisAlignedBoundingBox &aabb,
   return infoVec;
 }
 
+void CollisionManager::Collide(CollisionInfo &colInfo) {
+  Collide(colInfo, 0, glm::ivec3(0,0,0));
+}
+
 void CollisionManager::Collide(CollisionInfo &colInfo, uint32_t depthLevel,
                                const glm::ivec3 &octStart) {
-  glm::vec3 s(octStart.x, octStart.y, octStart.z);
-  if (CheckCollision(s, s + glm::vec3(SIZE_TABLE[depthLevel]), colInfo.rayStart,
-                     colInfo.rayDirection)) {
+  glm::vec3 octreeSearchStart(octStart.x, octStart.y, octStart.z);
+  glm::vec3 octreeSearchEnd = octreeSearchStart + glm::vec3(SIZE_TABLE[depthLevel]);
+
+  if (CheckCollision(octStart, octreeSearchEnd + glm::vec3(SIZE_TABLE[depthLevel]),
+      colInfo.rayStart, colInfo.rayDirection)) {
     if (depthLevel == Depth) {
-      const float dist = glm::distance2(colInfo.rayStart, s);
+      const float dist = glm::distance2(colInfo.rayStart, octreeSearchStart);
 
       if (dist > 0 && dist < colInfo.nearestDistance &&
           m_octree->CheckNode(octStart.x, octStart.y, octStart.z)) {

@@ -1,18 +1,18 @@
 #ifndef COLLISION_INFO_H
 #define COLLISION_INFO_H
 
-#include "MNode.h"
+#include "VoxNode.h"
 
 namespace vox {
 struct CollisionInfo {
-  MNode node;
+  VoxNode node;
   float nearestDistance;
   glm::vec3 rayStart, rayDirection;
 
   CollisionInfo(glm::vec3 ray_start, glm::vec3 ray_direction){
     rayStart = ray_start;
     rayDirection = ray_direction;
-    nearestDistance = -1;
+    nearestDistance = std::numeric_limits<float>::max();
     node.size = -1;
   }
 

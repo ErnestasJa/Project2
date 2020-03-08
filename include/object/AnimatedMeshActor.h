@@ -16,6 +16,10 @@ public:
   void SetMaterial(core::SharedPtr<material::BaseMaterial> material);
   material::BaseMaterial* GetMaterial() const;
 
+  glm::vec3 GetPosition(){
+    return m_position;
+  }
+
   void SetPosition(glm::vec3 position);
   void SetRotation(glm::vec3 rotation);
   void Scale(glm::vec3 scale);

@@ -1,8 +1,8 @@
-#include "voxel/MNode.h"
+#include "voxel/VoxNode.h"
 #include "voxel/Morton.h"
 
 namespace vox {
-MNode::MNode(MNode &&n) noexcept
+VoxNode::VoxNode(VoxNode &&n) noexcept
     : start(n.start), size(n.size), r(n.r), g(n.g), b(n.b) {}
 
 /*MNode& MNode::operator=(MNode&& x) noexcept //fixme
@@ -15,13 +15,13 @@ MNode::MNode(MNode &&n) noexcept
     return *this;
 }*/
 
-MNode::MNode(uint32_t x, uint32_t y, uint32_t z, uint8_t nodeSize) {
+VoxNode::VoxNode(uint32_t x, uint32_t y, uint32_t z, uint8_t nodeSize) {
   start = encodeMK(x, y, z);
   size = nodeSize;
   r = g = b = 255;
 }
 
-MNode::MNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint8_t> color, uint8_t nodeSize){
+VoxNode::VoxNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint8_t> color, uint8_t nodeSize){
   start = encodeMK(pos.x, pos.y, pos.z);
   r = color.r;
   g = color.g;
@@ -29,7 +29,7 @@ MNode::MNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint8_t> color, uint
   size = nodeSize;
 }
 
-MNode::MNode(uint32_t morton, uint8_t nodeSize, uint8_t red, uint8_t green,
+VoxNode::VoxNode(uint32_t morton, uint8_t nodeSize, uint8_t red, uint8_t green,
              uint8_t blue) {
   start = morton;
   size = nodeSize;
@@ -38,25 +38,33 @@ MNode::MNode(uint32_t morton, uint8_t nodeSize, uint8_t red, uint8_t green,
   b = blue;
 }
 
-MNode::MNode(uint32_t morton, uint8_t nodeSize) {
+VoxNode::VoxNode(uint32_t morton, uint8_t nodeSize) {
   start = morton;
   size = nodeSize;
   r = g = b = 255;
 }
 
-MNode::MNode() {
+VoxNode::VoxNode() {
   start = 0;
   size = 0;
   r = g = b = 255;
 }
 
-bool MNode::operator<(const MNode &other)
+bool VoxNode::operator<(const VoxNode &other)
     const /// ordering: z order, plus on equal sizes largest first
 {
   return start == other.start ? size > other.size : start < other.start;
 }
 
-bool MNode::operator==(const MNode &other) const {
+bool VoxNode::operator==(const VoxNode &other) const {
   return start == other.start && size == other.size;
+}
+
+void VoxNode::Assign(const VoxNode &node) {
+  size = node.size;
+  start = node.start;
+  r = node.r;
+  g = node.g;
+  b = node.b;
 }
 }

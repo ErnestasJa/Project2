@@ -14,8 +14,15 @@ public:
   virtual bool OnMouseMoveDelta(const int32_t x, const int32_t y);
   bool OnKeyUp(const Key& key, const bool repeated) override;
 
+  bool OnMouseDown(const input::MouseButton &key);
+  bool OnMouseUp(const input::MouseButton &key);
+
   bool IsKeyDown(const Key& key) const {
     return m_keyStates.get()[key.GetId()];
+  }
+
+  bool IsMouseButtonDown(const MouseButton& button) const {
+    return m_mouseButtonStates.get()[button.GetId()];
   }
 
 private:
@@ -23,6 +30,7 @@ private:
     core::pod::Vec2<int32_t> m_mouseOld = {0, 0};
     core::pod::Vec2<int32_t> m_mouseNew = {0, 0};
     core::UniquePtr<int> m_keyStates;
+    core::UniquePtr<int> m_mouseButtonStates;
 };
 }
 #endif // THEPROJECT2_INCLUDE_INPUT_GAMEINPUTHANDLER_H_

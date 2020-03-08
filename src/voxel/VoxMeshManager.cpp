@@ -2,6 +2,7 @@
 #include "voxel/Morton.h"
 #include "voxel/MortonOctree.h"
 #include "voxel/OctreeConstants.h"
+#include "voxel/VoxelUtils.h"
 #include "voxel/VoxelMesh.h"
 #include <render/BaseMesh.h>
 #include <render/IRenderer.h>
@@ -29,18 +30,18 @@ void VoxMeshManager::ClearBuildNodes() {
   ;
 }
 
-void VoxMeshManager::SetBuildNode(const MNode &node) {
+void VoxMeshManager::SetBuildNode(const VoxNode &node) {
   uint32_t x, y, z;
   decodeMK(node.start & LOCAL_VOXEL_MASK, x, y, z);
-  MNode &bn = m_buildNodes[x][y][z];
+  VoxNode &bn = m_buildNodes[x][y][z];
   bn.start = node.start;
-  bn.size = 1;
+  bn.size = node.size;
   bn.r = node.r;
   bn.g = node.g;
   bn.b = node.b;
 }
 
-bool vf_equals(const MNode &n1, const MNode &n2) {
+bool vf_equals(const VoxNode &n1, const VoxNode &n2) {
   return n1.size == 1 && n1.size == n2.size;
 }
 
@@ -63,9 +64,9 @@ inline void clearArea(MaskNode mask[32][32], bool front, int si, int sj, int i2,
         mask[j][i].backFace = false;
 }
 
-MNode VoxMeshManager::GetBuildNode(uint32_t x, uint32_t y, uint32_t z) {
+VoxNode VoxMeshManager::GetBuildNode(uint32_t x, uint32_t y, uint32_t z) {
   if (x > 31 || y > 31 || z > 31) {
-    return MNode(0, 0);
+    return VoxNode(0, 0);
   } else {
     return m_buildNodes[x][y][z];
     ;
@@ -76,7 +77,7 @@ bool VoxMeshManager::CheckBuildNode(uint32_t x, uint32_t y, uint32_t z) {
   if (x > 31 || y > 31 || z > 31) {
     return false;
   } else {
-    return m_buildNodes[x][y][z].size;
+    return m_buildNodes[x][y][z].size == 1;
   }
 }
 
@@ -185,6 +186,7 @@ void VoxMeshManager::BuildFacesFromMask(vox::VoxelMesh *mesh, int dim, int z,
 
     for (int j = r.y; j <= r.y2; j++) {
       for (int i = r.x; i <= r.x2; i++) {
+
         if (frontFace ? mask[j][i].frontFace : mask[j][i].backFace) {
           color[0] = mask[j][i].r;
           color[1] = mask[j][i].g;
@@ -371,16 +373,16 @@ uint8_t VoxMeshManager::GetVisibleBuildNodeSides(uint32_t x, uint32_t y,
 }
 
 void VoxMeshManager::GenAllChunks() {
-  if (m_octree->GetChildNodes().empty())
+  if (m_octree->GetNodes().empty())
     return;
 
   ClearBuildNodes();
 
   uint32_t nodeChunk, x, y, z;
   uint32_t currentChunkMortonKey = nodeChunk =
-      m_octree->GetChildNodes()[0].start & CHUNK_MASK;
+      m_octree->GetNodes()[0].start & CHUNK_MASK;
 
-  for (auto &node : m_octree->GetChildNodes()) {
+  for (auto &node : m_octree->GetNodes()) {
     nodeChunk = node.start & CHUNK_MASK; /// get chunk (size 32x32x32)
 
     if (nodeChunk !=
@@ -407,7 +409,7 @@ void VoxMeshManager::GenAllChunks() {
     it.second->Upload();
 }
 
-void VoxMeshManager::AddVoxelToMesh(vox::VoxelMesh *mesh, const MNode &node,
+void VoxMeshManager::AddVoxelToMesh(vox::VoxelMesh *mesh, const VoxNode &node,
                                     uint8_t sides) {
   /*auto &ibo = mesh->Indices;
   auto &vbo = mesh->Vertices;
@@ -538,8 +540,8 @@ void VoxMeshManager::RebuildChunk(uint32_t chunk) {
   uint32_t x, y, z;
   decodeMK(chunk, x, y, z);
   printf("Rebuilding chunk [%u,%u,%u]\n", x, y, z);
-  auto &nodes = m_octree->GetChildNodes();
-  auto it = std::lower_bound(nodes.begin(), nodes.end(), MNode(chunk));
+  auto &nodes = m_octree->GetNodes();
+  auto it = std::lower_bound(nodes.begin(), nodes.end(), VoxNode(chunk));
   const uint32_t fchunk = (it->start & CHUNK_MASK);
 
   MapIterator mit;
@@ -563,10 +565,9 @@ void VoxMeshManager::RebuildChunk(uint32_t chunk) {
   }
 
   ClearBuildNodes();
-  for (; it != m_octree->GetChildNodes().end(); it++) {
-    MNode &node = (*it);
-    const uint32_t nodeChunk =
-        node.start & CHUNK_MASK; /// get chunk (size 32x32x32)
+  for (; it != m_octree->GetNodes().end(); it++) {
+    VoxNode &node = (*it);
+    const uint32_t nodeChunk = vox::utils::GetChunk(node.start);
 
     if (nodeChunk != fchunk)
       break;
