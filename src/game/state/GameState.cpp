@@ -18,10 +18,11 @@ bool GameState::Initialize() {
   m_camera->SetFOV(35);
 
 
-  m_debugLineMesh = core::MakeUnique<render::debug::DebugLineMesh>(
+  for(int i = 0; i < 2; i++)
+    m_debugMeshes.push_back(core::Move(core::MakeUnique<render::debug::DebugLineMesh>(
       core::Move(Game->GetRenderer()->CreateBaseMesh()),
       Game->GetResourceManager()->LoadMaterial("Resources/shaders/debug")
-      );
+      )));
 
   Game->GetRenderer()->GetRenderContext()->SetCurrentCamera(m_camera);
   m_inputHandlerHandle =
@@ -82,7 +83,11 @@ void GameState::RenderPlayer(float deltaSeconds) {
 
   Game->GetSceneRenderer()->Render(m_weaponActor.get());
   Game->GetSceneRenderer()->Render(m_playerActor.get());
-  Game->GetRenderer()->RenderMesh(m_debugLineMesh->GetMesh(), m_debugLineMesh->GetMaterial(), glm::mat4(1));
+
+  for(const auto& debugMesh: m_debugMeshes) {
+    Game->GetRenderer()->RenderMesh(debugMesh->GetMesh(),
+                                    debugMesh->GetMaterial(), glm::mat4(1));
+  }
 }
 
 
@@ -168,17 +173,19 @@ void GameState::HandleKeyInput(float deltaSeconds) {
   }
 
   if(IsMouseButtonDown(input::MouseButtons::Left)){
-    auto playerPos = m_player->GetPosition();
-    auto cameraPos = m_camera->GetPosition();
-    glm::vec3 direction = glm::normalize(m_camera->GetDirection()) * 5.f;
+    auto [start, dir] = GetPlayerAimDirection();
 
-    m_debugLineMesh->Clear();
-    m_debugLineMesh->AddLine(playerPos, playerPos + direction, {255,0,0});
-    //m_debugLineMesh->AddLine(playerPos, playerPos + glm::vec3{0.f ,10.0f, 0.f}, {255,0,0});
-    m_debugLineMesh->Upload();
-
-    elog::LogInfo("Mouse down");
+    m_debugMeshes[0]->Clear();
+    m_debugMeshes[0]->AddLine(start, start + dir, {255,0,0});
+    m_debugMeshes[0]->Upload();
   }
+}
+
+core::tuple<glm::vec3, glm::vec3> GameState::GetPlayerAimDirection(){
+  auto playerPos = m_player->GetPosition();
+  glm::vec3 direction = glm::normalize(m_camera->GetDirection()) * 5.0f;
+  elog::LogInfo(core::string::format("Direction = [x:{:03.2f}, y:{:03.2f}, z:{:03.2f}]", direction.x, direction.y, direction.z));
+  return {playerPos, direction};
 }
 
 bool GameState::OnMouseMoveDelta(const int32_t x,
@@ -203,11 +210,13 @@ core::UniquePtr<IGameState> GameState::Create() {
 bool GameState::OnMouseUp(const input::MouseButton &key) {
   if(key == input::MouseButtons::Left){
     elog::LogInfo("Mouse up");
-    m_debugLineMesh->Clear();
 
-    auto playerPos = m_player->GetPosition();
-    glm::vec3 direction = glm::normalize(m_camera->GetDirection()) * 5.f;
-    auto ci = vox::CollisionInfo(playerPos, direction);
+    auto [start, dir] = GetPlayerAimDirection();
+
+    m_debugMeshes[1]->AddLine(start, start + dir, {0,255,0});
+    m_debugMeshes[1]->Upload();
+
+    auto ci = vox::CollisionInfo(start, dir);
     m_collisionManager->Collide(ci);
 
     if(ci.HasCollided())

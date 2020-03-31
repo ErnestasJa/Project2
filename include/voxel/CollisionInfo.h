@@ -7,11 +7,12 @@ namespace vox {
 struct CollisionInfo {
   VoxNode node;
   float nearestDistance;
-  glm::vec3 rayStart, rayDirection;
+  glm::vec3 rayStart, rayDirection, rayInverseDirection;
 
   CollisionInfo(glm::vec3 ray_start, glm::vec3 ray_direction){
     rayStart = ray_start;
-    rayDirection = ray_direction;
+    rayDirection = glm::normalize(ray_direction);
+    rayInverseDirection = 1.0f/ray_direction;
     nearestDistance = std::numeric_limits<float>::max();
     node.size = -1;
   }

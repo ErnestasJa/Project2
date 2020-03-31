@@ -66,7 +66,7 @@ bool MortonOctree::CheckNodeFloat(float x, float y, float z) {
 bool MortonOctree::CheckNode(uint32_t x, uint32_t y, uint32_t z) {
   VoxNode n(x, y, z, 1);
   auto node = std::lower_bound(m_nodes.begin(), m_nodes.end(), n,
-                            NodeSortPredicate);
+                               NodeSortPredicate);
 
   return node != m_nodes.end() && node->start == n.start && node->size > 0;
 }

@@ -21,6 +21,8 @@ bool CollisionManager::CheckCollision(const glm::vec3 &bmin,
                                       const glm::vec3 &bmax,
                                       const glm::vec3 &rayStart,
                                       const glm::vec3 &rayDirectionInverse) {
+
+
   double tx1 = (bmin.x - rayStart.x) * rayDirectionInverse.x;
   double tx2 = (bmax.x - rayStart.x) * rayDirectionInverse.x;
 
@@ -39,7 +41,7 @@ bool CollisionManager::CheckCollision(const glm::vec3 &bmin,
   tmin = std::max(tmin, std::min(tz1, tz2));
   tmax = std::min(tmax, std::max(tz1, tz2));
 
-  return tmax >= tmin;
+  return tmax >= std::max(0.0, tmin) && tmin < std::numeric_limits<float>::max();
 }
 
 bool CollisionManager::CheckCollision(
@@ -192,8 +194,8 @@ void CollisionManager::Collide(CollisionInfo &colInfo, uint32_t depthLevel,
   glm::vec3 octreeSearchStart(octStart.x, octStart.y, octStart.z);
   glm::vec3 octreeSearchEnd = octreeSearchStart + glm::vec3(SIZE_TABLE[depthLevel]);
 
-  if (CheckCollision(octStart, octreeSearchEnd + glm::vec3(SIZE_TABLE[depthLevel]),
-      colInfo.rayStart, colInfo.rayDirection)) {
+  if (CheckCollision(octStart, octreeSearchEnd,
+      colInfo.rayStart, colInfo.rayInverseDirection)) {
     if (depthLevel == Depth) {
       const float dist = glm::distance2(colInfo.rayStart, octreeSearchStart);
 

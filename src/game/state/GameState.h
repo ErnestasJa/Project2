@@ -32,7 +32,7 @@ protected:
   util::Timer m_timer;
   input::InputHandlerHandle m_inputHandlerHandle;
   core::SharedPtr<render::OrbitCamera> m_camera;
-  core::UniquePtr<render::debug::DebugLineMesh> m_debugLineMesh;
+  core::Vector<core::UniquePtr<render::debug::DebugLineMesh>> m_debugMeshes;
   core::SharedPtr<game::obj::AnimatedMeshActor> m_playerActor;
   core::SharedPtr<game::obj::AnimatedMeshActor> m_weaponActor;
   core::SharedPtr<vox::MortonOctree> m_octree;
@@ -42,6 +42,7 @@ protected:
   core::UniquePtr<game::Player> m_player;
   bool m_shouldExitState = false;
   core::UniquePtr<render::ITexture> m_worldAtlas;
+  core::tuple<glm::vec3, glm::vec3> GetPlayerAimDirection();
 };
 
 
