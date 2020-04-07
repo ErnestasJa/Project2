@@ -195,7 +195,7 @@ void CollisionManager::Collide(CollisionInfo &colInfo, uint32_t depthLevel,
   glm::vec3 octreeSearchEnd = octreeSearchStart + glm::vec3(SIZE_TABLE[depthLevel]);
 
   if (CheckCollision(octStart, octreeSearchEnd,
-      colInfo.rayStart, colInfo.rayInverseDirection)) {
+    colInfo.rayStart, colInfo.rayInverseDirection)) {
     if (depthLevel == Depth) {
       const float dist = glm::distance2(colInfo.rayStart, octreeSearchStart);
 
@@ -220,8 +220,6 @@ void CollisionManager::Collide(CollisionInfo &colInfo, uint32_t depthLevel,
     Collide(colInfo, depthLevel, octStart + glm::ivec3(size, size, size));
     Collide(colInfo, depthLevel, octStart + glm::ivec3(0, size, size));
   }
-
-  return;
 }
 
 static bool IsRayIntersectingTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c,
