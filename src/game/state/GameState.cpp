@@ -178,13 +178,17 @@ void GameState::HandleKeyInput(float deltaSeconds) {
     m_debugMeshes[0]->Clear();
     m_debugMeshes[0]->AddLine(start, start + dir, {255,0,0});
     m_debugMeshes[0]->Upload();
+    if(m_playerActor->GetAnimationController()->IsAnimationPlaying("Armature|attack") == false){
+      m_playerActor->GetAnimationController()->SetAnimation("Armature|attack",
+          render::anim::AnimationPlaybackOptions(false, -1, 1));
+    }
   }
 }
 
 core::tuple<glm::vec3, glm::vec3> GameState::GetPlayerAimDirection(){
   auto playerPos = m_player->GetPosition();
   glm::vec3 direction = glm::normalize(m_camera->GetDirection()) * 5.0f;
-  elog::LogInfo(core::string::format("Direction = [x:{:03.2f}, y:{:03.2f}, z:{:03.2f}]", direction.x, direction.y, direction.z));
+  //elog::LogInfo(core::string::format("Direction = [x:{:03.2f}, y:{:03.2f}, z:{:03.2f}]", direction.x, direction.y, direction.z));
   return {playerPos, direction};
 }
 

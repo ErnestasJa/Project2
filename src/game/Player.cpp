@@ -71,23 +71,23 @@ void Player::Update(float timeStep) {
 }
 
 void Player::UpdateMesh(float deltaSeconds){
+  const auto walkAnimationName = "Armature|walk";
+  const auto idleAnimationName = "Armature|idle";
+
   auto xzVelocity = m_velocity;
   xzVelocity.y=0;
 
-  auto currentAnimation = m_playerActor->GetAnimationController()->GetCurrentAnimation();
+  auto animController = m_playerActor->GetAnimationController();
 
   if(glm::length(xzVelocity) > 0.01) {
-    auto walkAnimationName = "Armature|walk";
 
-    if(!currentAnimation || currentAnimation->Name != walkAnimationName) {
-      m_playerActor->GetAnimationController()->SetAnimation(
-          walkAnimationName);
+    if(animController->IsAnimationPlaying(walkAnimationName) == false) {
+      m_playerActor->GetAnimationController()->SetAnimation(walkAnimationName, render::anim::AnimationPlaybackOptions(true));
     }
   }
   else {
-    if(!currentAnimation || currentAnimation->Name != "Armature|idle") {
-      m_playerActor->GetAnimationController()->SetAnimation("Armature|idle");
-      m_playerActor->GetAnimationController()->OverrideFps(0.5);
+    if(animController->IsAnimationPlaying(idleAnimationName) == false) {
+      m_playerActor->GetAnimationController()->SetAnimation(idleAnimationName, render::anim::AnimationPlaybackOptions(true, 5));
     }
   }
 
