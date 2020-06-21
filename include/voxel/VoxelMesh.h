@@ -10,12 +10,12 @@ public:
   core::Vector<glm::vec3> UVs;
 
 public:
-  VoxelMesh(core::SharedPtr<render::IGpuBufferArrayObject> vao);
+  VoxelMesh(core::UniquePtr<render::IGpuBufferArrayObject> vao);
   void Upload();
   void Render();
-
+  ~VoxelMesh();
 protected:
-  core::SharedPtr<render::IGpuBufferArrayObject> m_vao;
+  core::UniquePtr<render::IGpuBufferArrayObject> m_vao;
 };
 }
 

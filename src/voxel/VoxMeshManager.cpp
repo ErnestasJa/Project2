@@ -6,6 +6,7 @@
 #include "voxel/VoxelMesh.h"
 #include <render/BaseMesh.h>
 #include <render/IRenderer.h>
+#include <render/IGpuBufferArrayObject.h>
 #include "stdlib.h"
 
 namespace vox {
@@ -527,7 +528,7 @@ core::SharedPtr<vox::VoxelMesh> VoxMeshManager::CreateEmptyMesh() {
   };
 
   auto vao = m_renderer->CreateBufferArrayObject(bufferDescriptors);
-  return core::MakeShared<vox::VoxelMesh>(vao);
+  return core::MakeShared<vox::VoxelMesh>(core::Move(vao));
 }
 
 void VoxMeshManager::ClearMesh(vox::VoxelMesh *mesh) {

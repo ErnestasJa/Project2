@@ -3,8 +3,12 @@
 #include "render/IGpuBufferObject.h"
 
 namespace vox {
-VoxelMesh::VoxelMesh(core::SharedPtr<render::IGpuBufferArrayObject> vao)
-: m_vao(vao) {
+VoxelMesh::VoxelMesh(core::UniquePtr<render::IGpuBufferArrayObject> vao)
+: m_vao(core::Move(vao)) {
+
+}
+VoxelMesh::~VoxelMesh()
+{
 
 }
 

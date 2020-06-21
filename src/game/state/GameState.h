@@ -32,13 +32,13 @@ protected:
   util::Timer m_timer;
   input::InputHandlerHandle m_inputHandlerHandle;
   core::SharedPtr<render::OrbitCamera> m_camera;
-  core::Vector<core::UniquePtr<render::debug::DebugLineMesh>> m_debugMeshes;
   core::SharedPtr<game::obj::AnimatedMeshActor> m_playerActor;
   core::SharedPtr<game::obj::AnimatedMeshActor> m_weaponActor;
   core::SharedPtr<vox::MortonOctree> m_octree;
   core::UniquePtr<vox::VoxMeshManager> m_meshManager;
   core::UniquePtr<vox::CollisionManager> m_collisionManager;
   core::SharedPtr<material::BaseMaterial> m_worldMaterial;
+  core::UniquePtr<render::DebugRenderer> m_debugRenderer;
   core::UniquePtr<game::Player> m_player;
   bool m_shouldExitState = false;
   core::UniquePtr<render::ITexture> m_worldAtlas;

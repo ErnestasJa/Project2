@@ -8,6 +8,7 @@ int main() {
   wDef.Dimensions = {1920, 1080};
   wDef.Title = "TheProject2";
   wDef.Fullscreen = false;
+  wDef.DebugContext = true;
 
   if(game::CGame::Initialize(wDef) == false){
     return -1;
