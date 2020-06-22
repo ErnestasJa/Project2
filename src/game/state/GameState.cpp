@@ -43,12 +43,13 @@ bool GameState::Initialize() {
   mapGen.Generate(m_octree.get());
   m_meshManager->GenAllChunks();
 
-  m_player = core::MakeUnique<game::Player>(m_playerActor, m_camera,
+  m_debugRenderer = core::MakeUnique<render::DebugRenderer>(
+      460, Game->GetRenderer(), Game->GetResourceManager());
+
+  m_player = core::MakeUnique<game::Player>(m_debugRenderer.get(), m_playerActor, m_camera,
                                             m_collisionManager.get(),
                                             glm::vec3{128, 130, 128});
 
-  m_debugRenderer = core::MakeUnique<render::DebugRenderer>(
-      1024, Game->GetRenderer(), Game->GetResourceManager());
   return true;
 }
 
@@ -107,13 +108,14 @@ bool GameState::Run() {
   RenderPlayer(secondsElapsed);
   m_debugRenderer->Render();
 
-  if(Game->GetRenderer()->GetDebugMessageMonitor()->isDebuggingEnabled()){
-    for(auto msg: Game->GetRenderer()->GetDebugMessageMonitor()->GetMessages()){
+  if (Game->GetRenderer()->GetDebugMessageMonitor()->isDebuggingEnabled()) {
+    for (auto msg :
+         Game->GetRenderer()->GetDebugMessageMonitor()->GetMessages()) {
       elog::LogInfo(msg->AsString());
     }
     Game->GetRenderer()->GetDebugMessageMonitor()->ClearMessages();
   }
-  
+
   return !m_shouldExitState;
 }
 
@@ -222,7 +224,9 @@ bool GameState::OnMouseUp(const input::MouseButton &key) {
 
     auto [start, dir] = GetPlayerAimDirection();
     auto end = start + dir;
-    elog::LogInfo(core::string::format("start: [{}, {}, {}], end: [{}, {}, {}]", start.x, start.y, start.z, end.x, end.y, end.z));
+    elog::LogInfo(core::string::format("start: [{}, {}, {}], end: [{}, {}, {}]",
+                                       start.x, start.y, start.z, end.x, end.y,
+                                       end.z));
     m_debugRenderer->AddLine(start, start + dir, 5);
 
     auto ci = vox::CollisionInfo(start, dir);
@@ -231,6 +235,9 @@ bool GameState::OnMouseUp(const input::MouseButton &key) {
     if (ci.HasCollided()) {
       uint32_t nodeX, nodeY, nodeZ;
       vox::decodeMK(ci.node.start, nodeX, nodeY, nodeZ);
+
+      m_debugRenderer->AddAABV(glm::vec3(nodeX, nodeY, nodeZ),
+                               glm::vec3(nodeX + 1, nodeY + 1, nodeZ + 1), 5);
 
       m_octree->RemoveNode(nodeX, nodeY, nodeZ);
 

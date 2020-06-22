@@ -1,19 +1,22 @@
 #include "game/Player.h"
-#include "render/animation/AnimationController.h"
 #include "render/animation/Animation.h"
+#include "render/animation/AnimationController.h"
 #include "voxel/CollisionInfo.h"
 #include "voxel/CollisionManager.h"
 #include <core/AxisAlignedBoundingBox.h>
 #include <glm/geometric.hpp>
+#include <render/debug/DebugRenderer.h>
+#include <voxel/Morton.h>
 
 namespace game {
 static constexpr float GRAVITY_CONSTANT = -9.8f;
 static constexpr float TERMINAL_VELOCITY = 40.0f;
 
-Player::Player(core::SharedPtr<game::obj::AnimatedMeshActor> playerActor,
+Player::Player(render::DebugRenderer* debugRenderer, core::SharedPtr<game::obj::AnimatedMeshActor> playerActor,
     core::SharedPtr<render::ICamera> cam, vox::CollisionManager *octree,
                glm::vec3 position, float width, float height,
                glm::vec3 eyeOffset) {
+  m_debugRenderer = debugRenderer;
   m_octree = octree;
   m_cam = cam;
   m_eyeOffset = eyeOffset;
@@ -172,6 +175,13 @@ bool Player::IsSweptColliding(float timeStep) {
     if (collisions.empty()) {
       m_position += velocity;
       return false;
+    }
+
+    for(const auto & col: collisions){
+      uint32_t x, y, z;
+      vox::decodeMK(col.voxelMK, x, y, z);
+
+      m_debugRenderer->AddAABV(glm::vec3(x,y,z), glm::vec3(x+1, y+1, z+1), 0.3);
     }
 
     glm::vec3 sweepDir = glm::normalize(velocity);
