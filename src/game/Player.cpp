@@ -18,7 +18,7 @@ Player::Player(render::DebugRenderer* debugRenderer, core::SharedPtr<game::obj::
                glm::vec3 eyeOffset) {
   m_debugRenderer = debugRenderer;
   m_octree = octree;
-  m_cam = cam;
+  m_cam = std::move(cam);
   m_eyeOffset = eyeOffset;
   m_position = position;
   m_playerActor = playerActor;
@@ -27,6 +27,7 @@ Player::Player(render::DebugRenderer* debugRenderer, core::SharedPtr<game::obj::
   m_onGround = false;
   m_flyEnabled = false;
   m_height = height;
+  m_velocity = {0,0,0};
 }
 
 Player::~Player() {
@@ -68,8 +69,8 @@ void Player::Update(float timeStep) {
     m_position = (m_position + velocity);
   }
 
-  UpdateMesh(timeStep);
 
+  UpdateMesh(timeStep);
   m_cam->SetPosition(m_position + m_eyeOffset);
 }
 
@@ -94,7 +95,7 @@ void Player::UpdateMesh(float deltaSeconds){
     }
   }
 
-  glm::vec3 playerRot;
+  glm::vec3 playerRot = {0,0,0};
   playerRot.y = m_cam->GetRotation().x;
   m_playerActor->SetPosition(m_position - glm::vec3(0, m_height/2.f, 0));
   m_playerActor->SetRotation(playerRot);

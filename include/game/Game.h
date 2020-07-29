@@ -24,10 +24,6 @@ public:
 
   io::IFileSystem *GetFileSystem() { return m_fileSystem.get(); }
 
-  res::GpuProgramManager *GetGpuProgramManager() {
-    return m_gpuProgramManager.get();
-  }
-
   res::ImageLoader *GetImageLoader() { return m_imageLoader.get(); }
 
   game::GameStateManager *GetGameStateManager() {
@@ -45,7 +41,6 @@ private:
   core::UniquePtr<res::ResourceManager> m_resourceManager;
   core::UniquePtr<io::IFileSystem> m_fileSystem;
   core::UniquePtr<engine::IEngineContext> m_engineContext;
-  core::UniquePtr<res::GpuProgramManager> m_gpuProgramManager;
   core::UniquePtr<res::ImageLoader> m_imageLoader;
   core::UniquePtr<game::GameStateManager> m_gameStateManager;
   core::SharedPtr<elog::DefaultCoutLogPipe> m_coutLogPipe;

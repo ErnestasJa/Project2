@@ -25,20 +25,29 @@ bool CGame::Initialize(const render::SWindowDefinition &def) {
   Game->m_engineContext = engine::CreateContext(def);
   Game->m_renderer = Game->m_engineContext->GetRenderer();
   Game->m_window = Game->m_engineContext->GetWindow();
-  Game->m_gpuProgramManager = core::MakeUnique<res::GpuProgramManager>(
-      Game->m_renderer, Game->m_fileSystem.get());
+
   Game->m_imageLoader = core::MakeUnique<res::ImageLoader>(
       Game->m_fileSystem.get(), Game->m_renderer);
   Game->m_gameStateManager = core::MakeUnique<game::GameStateManager>();
   Game->m_assimpImporter = core::MakeUnique<res::mesh::AssimpImport>(Game->GetFileSystem(), Game->GetRenderer());
-  Game->m_resourceManager = core::MakeUnique<res::ResourceManager>(Game->m_imageLoader.get(), Game->GetGpuProgramManager(), Game->m_assimpImporter.get());
+  Game->m_resourceManager = core::MakeUnique<res::ResourceManager>(
+          Game->m_imageLoader.get(), Game->m_renderer, Game->m_fileSystem.get(), Game->m_assimpImporter.get());
   Game->m_sceneRenderer = core::MakeUnique<scene::Renderer>(Game->m_renderer);
 
   return true;
 }
 
-CGame::CGame() {}
+CGame::CGame() {
+
+}
+
 CGame::~CGame() {
-  m_window->Close();
+    m_coutLogPipe = nullptr;
+    elog::ClearStreams();
+    elog::ClearStreams();
+    m_sceneRenderer = nullptr;
+    m_assimpImporter = nullptr;
+    m_resourceManager = nullptr;
+    m_window->Close();
 }
 }

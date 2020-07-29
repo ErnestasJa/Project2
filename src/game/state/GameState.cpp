@@ -6,8 +6,15 @@
 #include "render/debug/DebugRenderer.h"
 #include "voxel/VoxelInc.h"
 #include "voxel/map/RandomMapGenerator.h"
+#include "util/thread/Sleep.h"
 
 namespace game::state {
+static core::pod::Vec3 G_WorldSize(32,16,32);
+
+GameState::~GameState() {
+    m_inputHandlerHandle.Disconnect();
+}
+
 bool GameState::Initialize() {
   Game->GetWindow()->SetCursorMode(render::CursorMode::HiddenCapture);
   Game->GetRenderer()->SetClearColor(render::Vec3i{155, 200, 155});
@@ -38,7 +45,7 @@ bool GameState::Initialize() {
   m_worldMaterial =
       Game->GetResourceManager()->LoadMaterial("resources/shaders/voxel");
   m_worldMaterial->SetTexture(0, m_worldAtlas.get());
-  vox::map::RandomMapGenerator mapGen({256, 128, 256});
+  vox::map::RandomMapGenerator mapGen({G_WorldSize.x, G_WorldSize.y, G_WorldSize.z});
 
   mapGen.Generate(m_octree.get());
   m_meshManager->GenAllChunks();
@@ -48,7 +55,7 @@ bool GameState::Initialize() {
 
   m_player = core::MakeUnique<game::Player>(m_debugRenderer.get(), m_playerActor, m_camera,
                                             m_collisionManager.get(),
-                                            glm::vec3{128, 130, 128});
+                                            glm::vec3{G_WorldSize.x/2, G_WorldSize.y, G_WorldSize.z/2});
 
   return true;
 }
@@ -92,6 +99,7 @@ void GameState::RenderPlayer(float deltaSeconds) {
 }
 
 bool GameState::Run() {
+  util::Timer timer;
   Game->GetRenderer()->BeginFrame();
   Game->GetRenderer()->Clear();
 
@@ -114,6 +122,12 @@ bool GameState::Run() {
       elog::LogInfo(msg->AsString());
     }
     Game->GetRenderer()->GetDebugMessageMonitor()->ClearMessages();
+  }
+
+  int32_t frameSleepMicroSeconds = 10000 - timer.MicrosecondsElapsed();
+
+  if(frameSleepMicroSeconds > 0){
+    util::thread::Sleep(frameSleepMicroSeconds);
   }
 
   return !m_shouldExitState;

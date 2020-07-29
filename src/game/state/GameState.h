@@ -14,11 +14,12 @@ namespace game::state {
 class GameState: public IGameState, public input::GameInputHandler {
 public:
   static core::UniquePtr<IGameState> Create();
+  ~GameState() override;
 
-  virtual bool Initialize() override;
-  virtual bool Finalize() override;
-  virtual core::String GetName() override;
-  virtual bool Run() override;
+  bool Initialize() override;
+  bool Finalize() override;
+  core::String GetName() override;
+  bool Run() override;
 
 protected:
   void RenderWorld();

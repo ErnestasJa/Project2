@@ -14,7 +14,7 @@ class Player {
 public:
   Player(render::DebugRenderer* debugRenderer, core::SharedPtr<game::obj::AnimatedMeshActor> playerActor,
       core::SharedPtr<render::ICamera> cam, vox::CollisionManager *octree,
-      glm::vec3 position, float width = 1.4f, float height = 1.98f,
+      glm::vec3 position, float width = 0.8f, float height = 1.80f,
          glm::vec3 eyeOffset = glm::vec3(0, 0.9, 0));
 
   virtual ~Player();

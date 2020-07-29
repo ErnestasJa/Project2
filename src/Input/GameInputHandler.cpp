@@ -4,9 +4,9 @@ namespace input {
 
 GameInputHandler::GameInputHandler() {
   const int maxKeys = 200;
-  m_keyStates = core::UniquePtr<int>(new int[maxKeys]);
+  m_keyStates = core::UniquePtr<int[]>(new int[maxKeys]);
   const int maxButtons = 16;
-  m_mouseButtonStates = core::UniquePtr<int>(new int[maxButtons]);
+  m_mouseButtonStates = core::UniquePtr<int[]>(new int[maxButtons]);
 
   for(int i = 0; i < e_input::Keys::UNKNOWN.GetId() + 1; i++){
     m_keyStates.get()[i] = false;
