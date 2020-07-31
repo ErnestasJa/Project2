@@ -1,22 +1,23 @@
 #include "GameState.h"
 #include "game/Game.h"
 #include <glm/gtx/matrix_decompose.hpp>
+#include <util/Noise.h>
 
+#include "gui/IGui.h"
+#include "render/Image.h"
 #include "render/animation/AnimationController.h"
 #include "render/debug/DebugRenderer.h"
+#include "util/thread/Sleep.h"
 #include "voxel/VoxelInc.h"
 #include "voxel/map/RandomMapGenerator.h"
-#include "util/thread/Sleep.h"
 
 namespace game::state {
-static core::pod::Vec3 G_WorldSize(32,16,32);
+static core::pod::Vec3 G_WorldSize(32, 16, 32);
 
-GameState::~GameState() {
-    m_inputHandlerHandle.Disconnect();
-}
+GameState::~GameState() { m_inputHandlerHandle.Disconnect(); }
 
 bool GameState::Initialize() {
-  Game->GetWindow()->SetCursorMode(render::CursorMode::HiddenCapture);
+  Game->GetWindow()->SetCursorMode(render::CursorMode::Normal);
   Game->GetRenderer()->SetClearColor(render::Vec3i{155, 200, 155});
 
   m_camera = core::MakeShared<render::OrbitCamera>();
@@ -45,7 +46,8 @@ bool GameState::Initialize() {
   m_worldMaterial =
       Game->GetResourceManager()->LoadMaterial("resources/shaders/voxel");
   m_worldMaterial->SetTexture(0, m_worldAtlas.get());
-  vox::map::RandomMapGenerator mapGen({G_WorldSize.x, G_WorldSize.y, G_WorldSize.z});
+  vox::map::RandomMapGenerator mapGen(
+      {G_WorldSize.x, G_WorldSize.y, G_WorldSize.z});
 
   mapGen.Generate(m_octree.get());
   m_meshManager->GenAllChunks();
@@ -53,9 +55,14 @@ bool GameState::Initialize() {
   m_debugRenderer = core::MakeUnique<render::DebugRenderer>(
       460, Game->GetRenderer(), Game->GetResourceManager());
 
-  m_player = core::MakeUnique<game::Player>(m_debugRenderer.get(), m_playerActor, m_camera,
-                                            m_collisionManager.get(),
-                                            glm::vec3{G_WorldSize.x/2, G_WorldSize.y, G_WorldSize.z/2});
+  m_player = core::MakeUnique<game::Player>(
+      m_debugRenderer.get(), m_playerActor, m_camera, m_collisionManager.get(),
+      glm::vec3{G_WorldSize.x / 2, G_WorldSize.y, G_WorldSize.z / 2});
+
+  m_noiseImage = core::MakeUnique<render::Image>(
+      core::pod::Vec2<uint32_t>{256, 256}, render::ImageFormat::RGB);
+  m_noiseTexture = Game->GetRenderer()->CreateTexture(render::TextureDescriptor(
+      m_noiseImage->GetSize().x, m_noiseImage->GetSize().y, render::TextureDataFormat::RGB));
 
   return true;
 }
@@ -63,6 +70,40 @@ bool GameState::Initialize() {
 bool GameState::Finalize() { return true; }
 
 core::String GameState::GetName() { return "Game"; }
+
+void GameState::GenerateNoiseImage() {
+  auto size = m_noiseImage->GetSize();
+  siv::PerlinNoise n(m_timer.SecondsSinceEpoch());
+
+  for (uint32_t x = 0; x < size.x; x++) {
+    for (uint32_t y = 0; y < size.y; y++) {
+
+      uint32_t value =
+          n.octaveNoise0_1(x / float(size.x), y / float(size.y), 16) * 256.f;
+
+      value = glm::min(256u, value);
+      m_noiseImage->WritePixel(x, y, value, value, value);
+    }
+  }
+
+  m_noiseTexture->UploadData(render::TextureDataDescriptor(
+      (void*)m_noiseImage->GetData(), m_noiseImage->GetSize()));
+}
+
+void GameState::RenderGui(float deltaSeconds) {
+  Game->GetGui()->BeginRender();
+
+  ImGui::Begin("Tools");
+  if (ImGui::Button("Gen noise")) {
+    GenerateNoiseImage();
+  }
+  auto tId = m_noiseTexture->GetId();
+  ImGui::Image((void *)tId, {256, 256});
+
+  ImGui::End();
+
+  Game->GetGui()->EndRender();
+}
 
 void GameState::RenderWorld() {
   m_worldMaterial->Use();
@@ -115,6 +156,7 @@ bool GameState::Run() {
   RenderWorld();
   RenderPlayer(secondsElapsed);
   m_debugRenderer->Render();
+  RenderGui(secondsElapsed);
 
   if (Game->GetRenderer()->GetDebugMessageMonitor()->isDebuggingEnabled()) {
     for (auto msg :
@@ -126,7 +168,7 @@ bool GameState::Run() {
 
   int32_t frameSleepMicroSeconds = 10000 - timer.MicrosecondsElapsed();
 
-  if(frameSleepMicroSeconds > 0){
+  if (frameSleepMicroSeconds > 0) {
     util::thread::Sleep(frameSleepMicroSeconds);
   }
 
@@ -265,5 +307,17 @@ bool GameState::OnMouseUp(const input::MouseButton &key) {
 bool GameState::OnMouseDown(const input::MouseButton &key) {
 
   return GameInputHandler::OnMouseDown(key);
+}
+bool GameState::OnKeyUp(const input::Key &key, const bool repeated) {
+  if (key == input::Keys::GRAVE_ACCENT) {
+    auto cursorMode =
+        Game->GetWindow()->GetCursorMode() == render::CursorMode::Normal
+            ? render::CursorMode::HiddenCapture
+            : render::CursorMode::Normal;
+
+    Game->GetWindow()->SetCursorMode(cursorMode);
+  }
+
+  return GameInputHandler::OnKeyUp(key, repeated);
 }
 } // namespace game::state

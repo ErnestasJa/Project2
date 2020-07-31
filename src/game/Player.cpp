@@ -7,6 +7,7 @@
 #include <glm/geometric.hpp>
 #include <render/debug/DebugRenderer.h>
 #include <voxel/Morton.h>
+#include "gui/IGui.h"
 
 namespace game {
 static constexpr float GRAVITY_CONSTANT = -9.8f;

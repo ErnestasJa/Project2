@@ -1,12 +1,11 @@
 #include "game/Game.h"
 #include <platform/IPlatformFileSystem.h>
+#include "gui/IGui.h"
 
 game::CGame * Game = nullptr;
 
 namespace game {
 bool CGame::Initialize(const render::SWindowDefinition &def) {
-
-
   auto appPath = platform::GetPlatformFileSystem()->GetExecutableDirectory();
   appPath = appPath.GetParentDirectory(); // for dev builds
 
@@ -33,7 +32,7 @@ bool CGame::Initialize(const render::SWindowDefinition &def) {
   Game->m_resourceManager = core::MakeUnique<res::ResourceManager>(
           Game->m_imageLoader.get(), Game->m_renderer, Game->m_fileSystem.get(), Game->m_assimpImporter.get());
   Game->m_sceneRenderer = core::MakeUnique<scene::Renderer>(Game->m_renderer);
-
+  Game->m_gui = gui::CreateGui(Game->m_engineContext.get());
   return true;
 }
 

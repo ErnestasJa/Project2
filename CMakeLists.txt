@@ -57,6 +57,7 @@ set(PROJECT_SOURCES
 include_directories (${INCLUDE_PATH})
 include_directories ("libs/TheEngine2/include")
 include_directories ("libs/TheEngine2/third_party/glm")
+include_directories ("libs/TheEngine2/third_party/imgui/imgui")
 
 add_subdirectory (libs/TheEngine2)
 

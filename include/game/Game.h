@@ -8,6 +8,10 @@
 #include "window/WindowInc.h"
 #include <resource_management/ResourceManagementInc.h>
 
+namespace gui {
+class IGui;
+}
+
 namespace game {
 class CGame {
 public:
@@ -34,6 +38,10 @@ public:
     return m_resourceManager.get();
   }
 
+  gui::IGui * GetGui(){
+    return m_gui.get();
+  }
+
 private:
   render::IRenderer *m_renderer;
   core::UniquePtr<scene::Renderer> m_sceneRenderer;
@@ -45,6 +53,7 @@ private:
   core::UniquePtr<game::GameStateManager> m_gameStateManager;
   core::SharedPtr<elog::DefaultCoutLogPipe> m_coutLogPipe;
   core::UniquePtr<res::mesh::AssimpImport> m_assimpImporter;
+  core::UniquePtr<gui::IGui> m_gui;
 };
 } // namespace game
 
