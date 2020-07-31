@@ -1,7 +1,8 @@
 #include "GameState.h"
 #include "game/Game.h"
 #include <glm/gtx/matrix_decompose.hpp>
-#include <util/Noise.h>
+#include "util/Noise.h"
+#include "util/noise/NoiseGenerator.h"
 
 #include "gui/IGui.h"
 #include "render/Image.h"
@@ -60,10 +61,12 @@ bool GameState::Initialize() {
       glm::vec3{G_WorldSize.x / 2, G_WorldSize.y, G_WorldSize.z / 2});
 
   m_noiseImage = core::MakeUnique<render::Image>(
-      core::pod::Vec2<uint32_t>{256, 256}, render::ImageFormat::RGB);
+      core::pod::Vec2<uint32_t>{512, 512}, render::ImageFormat::RGB);
   m_noiseTexture = Game->GetRenderer()->CreateTexture(render::TextureDescriptor(
       m_noiseImage->GetSize().x, m_noiseImage->GetSize().y, render::TextureDataFormat::RGB));
+  m_noiseGenerator = core::MakeUnique<util::noise::NoiseGenerator>(core::pod::Vec3<int32_t>(m_noiseImage->GetSize().x, m_noiseImage->GetSize().y,1));
 
+  GenerateNoiseImage();
   return true;
 }
 
@@ -73,15 +76,12 @@ core::String GameState::GetName() { return "Game"; }
 
 void GameState::GenerateNoiseImage() {
   auto size = m_noiseImage->GetSize();
-  siv::PerlinNoise n(m_timer.SecondsSinceEpoch());
+  //siv::PerlinNoise n(m_timer.SecondsSinceEpoch());
 
+  m_noiseGenerator->GenSimplex();
   for (uint32_t x = 0; x < size.x; x++) {
     for (uint32_t y = 0; y < size.y; y++) {
-
-      uint32_t value =
-          n.octaveNoise0_1(x / float(size.x), y / float(size.y), 16) * 256.f;
-
-      value = glm::min(256u, value);
+      uint32_t value = m_noiseGenerator->GetNoise(x,y,0);
       m_noiseImage->WritePixel(x, y, value, value, value);
     }
   }
@@ -90,15 +90,53 @@ void GameState::GenerateNoiseImage() {
       (void*)m_noiseImage->GetData(), m_noiseImage->GetSize()));
 }
 
+util::noise::NoiseGeneratorSettings noiseSettings;
+bool settingsChanged = true;
+int32_t seed = 1234;
+
 void GameState::RenderGui(float deltaSeconds) {
   Game->GetGui()->BeginRender();
 
-  ImGui::Begin("Tools");
-  if (ImGui::Button("Gen noise")) {
+  ImGui::Begin("Player settings");
+
+  bool fly = m_player->GetFlyEnabled();
+  if(ImGui::Checkbox("Fly", &fly)){
+    m_player->SetFlyEnabled(fly);
+  }
+
+  ImGui::End();
+
+  ImGui::Begin("Noise gen");
+
+  bool seedChanged = ImGui::SliderInt("Seed", &seed, 0, 9999);
+  if(seedChanged){
+    m_noiseGenerator->Reseed(m_timer.SecondsSinceEpoch());
+  }
+
+  settingsChanged =
+  ImGui::SliderFloat("Min val", &noiseSettings.Min, 0, 1) |
+  ImGui::SliderFloat("Max val", &noiseSettings.Max, 0, 1) |
+  ImGui::SliderFloat("Offset", &noiseSettings.Offset, -1, 1) |
+  ImGui::SliderFloat("Fractal gain", &noiseSettings.FractalGain, 0, 1) |
+  ImGui::SliderFloat("Fractal lacunarity", &noiseSettings.FractalLacunarity, 0, 5) |
+  ImGui::SliderInt("Fractal octaves", &noiseSettings.FractalOctaves, 1, 15) |
+  ImGui::SliderFloat("Frequency", &noiseSettings.Frequency, 0.0001, 0.1);
+
+  if(ImGui::Button("Reset")){
+    noiseSettings = util::noise::NoiseGeneratorSettings();
+    settingsChanged = true;
+  }
+
+
+  m_noiseGenerator->SetNoiseGenSettings(noiseSettings);
+
+  if (settingsChanged || seedChanged) {
     GenerateNoiseImage();
   }
+
   auto tId = m_noiseTexture->GetId();
-  ImGui::Image((void *)tId, {256, 256});
+
+  ImGui::Image((void *)tId, ImVec2(m_noiseImage->GetSize().x, m_noiseImage->GetSize().y));
 
   ImGui::End();
 

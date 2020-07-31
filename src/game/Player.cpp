@@ -26,7 +26,7 @@ Player::Player(render::DebugRenderer* debugRenderer, core::SharedPtr<game::obj::
   m_aabb = core::AxisAlignedBoundingBox(
       glm::vec3(0, 0, 0), glm::vec3(width / 2.0f, height / 2.0f, width / 2.0f));
   m_onGround = false;
-  m_flyEnabled = false;
+  m_flyEnabled = true;
   m_height = height;
   m_velocity = {0,0,0};
 }

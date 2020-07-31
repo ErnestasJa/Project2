@@ -9,6 +9,7 @@
 #include <game/Player.h>
 #include <input/InputHandlerHandle.h>
 #include <util/Timer.h>
+#include "util/noise/NoiseGenerator.h"
 
 namespace game::state {
 class GameState: public IGameState, public input::GameInputHandler {
@@ -51,6 +52,7 @@ protected:
 
   core::UniquePtr<render::ITexture> m_noiseTexture;
   core::UniquePtr<render::Image> m_noiseImage;
+  core::UniquePtr<util::noise::NoiseGenerator> m_noiseGenerator;
 };
 
 

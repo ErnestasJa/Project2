@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.0)
 project(TheProject2)
 
 
-set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -glldb -fdelete-null-pointer-checks -Wall -Wno-reorder -Wno-misleading-indentation  -Werror=return-type -std=c++17 -include EngineInc.h")
+set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -glldb -fdelete-null-pointer-checks -Wall -Wno-reorder -Wno-misleading-indentation  -Werror=return-type -std=c++17 -msse4.1 -include EngineInc.h")
 #set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -g -fdelete-null-pointer-checks -Wno-reorder -Wno-misleading-indentation -Wall -Werror=return-type -std=c++17 -include EngineInc.h")
 
 #set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /std:c++latest /MP /O2 /W3 /FIEngineInc.h")
@@ -58,13 +58,15 @@ include_directories (${INCLUDE_PATH})
 include_directories ("libs/TheEngine2/include")
 include_directories ("libs/TheEngine2/third_party/glm")
 include_directories ("libs/TheEngine2/third_party/imgui/imgui")
+include_directories ("libs/FastNoiseSIMD")
 
 add_subdirectory (libs/TheEngine2)
+add_subdirectory (libs/FastNoiseSIMD)
 
 
 
 add_executable(TheProject2 ${PROJECT_SOURCES})
 set_target_properties(TheProject2 PROPERTIES COMPILE_FLAGS "${CPP_GCC_COMPILE_FLAGS}")
-target_link_libraries(TheProject2 engine)
+target_link_libraries(TheProject2 engine FastNoise)
 
-add_dependencies(TheProject2 engine)
+add_dependencies(TheProject2 engine FastNoise)
