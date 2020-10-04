@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.0)
 project(TheProject2)
 
 
-set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -glldb -fdelete-null-pointer-checks -Wall -Wno-reorder -Wno-misleading-indentation  -Werror=return-type -std=c++17 -msse4.1 -include EngineInc.h")
+set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fdelete-null-pointer-checks -Wall -Wno-reorder -Wno-misleading-indentation  -Werror=return-type -std=c++17 -msse4.1 -include EngineInc.h")
 #set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -g -fdelete-null-pointer-checks -Wno-reorder -Wno-misleading-indentation -Wall -Werror=return-type -std=c++17 -include EngineInc.h")
 
 #set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /std:c++latest /MP /O2 /W3 /FIEngineInc.h")
@@ -30,12 +30,11 @@ file(GLOB_RECURSE PROJECT_INCLUDES
 
 set(PROJECT_SOURCES
         "${SRC_PATH}/main.cpp"
-        "${SRC_PATH}/utils/Timer.cpp"
         "${SRC_PATH}/voxel/VoxelSide.cpp"
         "${SRC_PATH}/voxel/VoxNode.cpp"
         "${SRC_PATH}/voxel/MNodeUtil.cpp"
         "${SRC_PATH}/voxel/MortonOctree.cpp"
-        "${SRC_PATH}/voxel/VoxMeshManager.cpp"
+        "${SRC_PATH}/voxel/WorldRenderer.cpp"
         "${SRC_PATH}/voxel/CollisionManager.cpp"
         "${SRC_PATH}/core/AxisAlignedBoundingBox.cpp"
 
@@ -49,9 +48,10 @@ set(PROJECT_SOURCES
         "${SRC_PATH}/object/AnimatedMeshActor.cpp"
         "${SRC_PATH}/scene/rendering/Renderer.cpp"
         "${SRC_PATH}/game/state/GameState.cpp"
-        src/voxel/map/RandomMapGenerator.cpp
+        src/voxel/world/WorldGenerator.cpp
         src/voxel/VoxelMesh.cpp
-        src/utils/thread/Sleep.cpp)
+        src/voxel/world/World.cpp
+        src/utils/thread/Sleep.cpp src/voxel/ChunkMesher.cpp include/util/MultiDimArrayIndex.h)
 
 
 include_directories (${INCLUDE_PATH})

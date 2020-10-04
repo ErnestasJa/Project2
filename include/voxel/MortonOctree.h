@@ -5,6 +5,10 @@
 #include "VoxNode.h"
 #include "VoxelSide.h"
 
+namespace gameworld{
+class WorldGenerator;
+}
+
 namespace vox {
 class MortonOctree {
 public:
@@ -24,6 +28,7 @@ public:
 private:
   core::Vector<VoxNode> m_nodes;
   void Remove(VoxNode node);
+  friend class gameworld::WorldGenerator;
 };
 }
 

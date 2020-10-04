@@ -6,17 +6,11 @@ namespace util::noise {
 struct NoiseGeneratorSettings {
 
   NoiseGeneratorSettings()
-  : FractalGain(.5f),
-    FractalLacunarity(2.0f),
-    Frequency(0.02f),
-    FractalOctaves(5),
-    Min(0),
-    Max(1),
-    Offset(0),
-    Scale(256)
-  {
-  }
+      : Translation(0, 0, 0), FractalGain(.5f), FractalLacunarity(2.0f),
+        Frequency(0.02f), FractalOctaves(5), Min(0), Max(1), Offset(0),
+        Scale(64), Seed(12345) {}
 
+  core::pod::Vec3<int32_t> Translation;
   float FractalGain;
   float FractalLacunarity;
   float Frequency;
@@ -24,52 +18,57 @@ struct NoiseGeneratorSettings {
   float Max;
   float Offset;
   float Scale;
-  int FractalOctaves;
+  int32_t FractalOctaves;
+  int32_t Seed;
 };
 
 class NoiseGenerator {
 public:
+  NoiseGenerator(core::pod::Vec3<int32_t> size) {
+    m_size = size;
 
-NoiseGenerator(core::pod::Vec3<int32_t> size, int32_t seed = 12345){
-  m_size = size;
-  m_fastNoise = core::UniquePtr<FastNoiseSIMD>(FastNoiseSIMD::NewFastNoiseSIMD(seed));
-  m_noiseSet = core::UniquePtr<float[]>(new float[m_size.x*m_size.y*m_size.z]);
-  m_fastNoise->SetFractalGain(0.5);
-  m_fastNoise->SetFractalLacunarity(2.0);
-  m_fastNoise->SetFrequency(0.02f);
-  m_fastNoise->SetFractalType(FastNoiseSIMD::FBM);
-  m_fastNoise->SetFractalOctaves(5);
-}
+    m_fastNoise = core::UniquePtr<FastNoiseSIMD>(
+        FastNoiseSIMD::NewFastNoiseSIMD(m_settings.Seed));
+    m_noiseSet =
+        core::UniquePtr<float[]>(new float[m_size.x * m_size.y * m_size.z]);
+    SetNoiseGenSettings(m_settings);
+  }
 
-void SetNoiseGenSettings(const NoiseGeneratorSettings & settings){
-  m_settings = settings;
-  m_fastNoise->SetFractalGain(settings.FractalGain);
-  m_fastNoise->SetFractalLacunarity(settings.FractalLacunarity);
-  m_fastNoise->SetFrequency(settings.Frequency);
-  m_fastNoise->SetFractalType(FastNoiseSIMD::FBM);
-  m_fastNoise->SetFractalOctaves(settings.FractalOctaves);
-}
+  void SetNoiseGenSettings(const NoiseGeneratorSettings &settings) {
+    m_fastNoise->SetFractalGain(settings.FractalGain);
+    m_fastNoise->SetFractalLacunarity(settings.FractalLacunarity);
+    m_fastNoise->SetFrequency(settings.Frequency);
+    m_fastNoise->SetFractalType(FastNoiseSIMD::FBM);
+    m_fastNoise->SetFractalOctaves(settings.FractalOctaves);
+    m_fastNoise->SetSeed(settings.Seed);
 
-void Reseed(int seed){
-  m_fastNoise->SetSeed(seed);
-}
+    m_settings = settings;
+  }
 
-void GenSimplex(float scaleFactor = 1.f){
-  m_fastNoise->FillSimplexFractalSet(m_noiseSet.get(), 0, 0,0, m_size.x, m_size.y, m_size.z, scaleFactor);
-}
+  void Reseed(int seed) { m_fastNoise->SetSeed(seed); }
 
-float GetNoise(int index){
-  float value = ((m_noiseSet.get()[index]+1)*0.5f);
-  value = glm::clamp(value, m_settings.Min, m_settings.Max) - m_settings.Offset;
-  return value * m_settings.Scale;
-}
+  void GenSimplex(float scaleFactor = 1.f) {
+    m_fastNoise->FillSimplexFractalSet(
+        m_noiseSet.get(), m_settings.Translation.x, m_settings.Translation.y,
+        m_settings.Translation.z, m_size.x, m_size.y, m_size.z, scaleFactor);
+  }
 
-float GetNoise(int32_t x, int32_t y, int32_t z){
-  int32_t index = z * m_size.x * m_size.y + y * m_size.x + x;
-  float value = ((m_noiseSet.get()[index]+1)*0.5f);
-  value = glm::clamp(value + m_settings.Offset, m_settings.Min, m_settings.Max) ;
-  return value * m_settings.Scale;
-}
+  float GetNoise(int index) {
+    float value = ((m_noiseSet.get()[index] + 1) * 0.5f);
+    value =
+        glm::clamp(value, m_settings.Min, m_settings.Max) - m_settings.Offset;
+    return value * m_settings.Scale;
+  }
+
+  float GetNoise(int32_t x, int32_t y, int32_t z) {
+    int32_t index = z * m_size.x * m_size.y + y * m_size.x + x;
+    float value = ((m_noiseSet.get()[index] + 1) * 0.5f);
+    value =
+        glm::clamp(value + m_settings.Offset, m_settings.Min, m_settings.Max);
+    return value * m_settings.Scale;
+  }
+
+  [[nodiscard]] const NoiseGeneratorSettings &GetSettings() const { return m_settings; }
 
 private:
   core::UniquePtr<FastNoiseSIMD> m_fastNoise;
@@ -78,6 +77,6 @@ private:
   NoiseGeneratorSettings m_settings;
 };
 
-}
+} // namespace util::noise
 
 #endif // THEPROJECT2_NOISEGENERATOR_H

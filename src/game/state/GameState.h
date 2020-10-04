@@ -4,12 +4,14 @@
 #include "IGameState.h"
 #include "game/GameFwd.h"
 #include "render/RenderFwd.h"
+#include "util/noise/NoiseGenerator.h"
 #include "voxel/VoxelFwd.h"
+#include "voxel/world/World.h"
+#include "voxel/world/WorldGenerator.h"
 #include <Input/GameInputHandler.h>
 #include <game/Player.h>
 #include <input/InputHandlerHandle.h>
 #include <util/Timer.h>
-#include "util/noise/NoiseGenerator.h"
 
 namespace game::state {
 class GameState: public IGameState, public input::GameInputHandler {
@@ -41,18 +43,19 @@ protected:
   core::SharedPtr<game::obj::AnimatedMeshActor> m_playerActor;
   core::SharedPtr<game::obj::AnimatedMeshActor> m_weaponActor;
   core::SharedPtr<vox::MortonOctree> m_octree;
-  core::UniquePtr<vox::VoxMeshManager> m_meshManager;
+  core::UniquePtr<gw::World> m_world;
+  core::UniquePtr<vox::WorldRenderer> m_worldRenderer;
   core::UniquePtr<vox::CollisionManager> m_collisionManager;
-  core::SharedPtr<material::BaseMaterial> m_worldMaterial;
   core::UniquePtr<render::DebugRenderer> m_debugRenderer;
   core::UniquePtr<game::Player> m_player;
   bool m_shouldExitState = false;
-  core::UniquePtr<render::ITexture> m_worldAtlas;
   core::tuple<glm::vec3, glm::vec3> GetPlayerAimDirection();
 
   core::UniquePtr<render::ITexture> m_noiseTexture;
   core::UniquePtr<render::Image> m_noiseImage;
   core::UniquePtr<util::noise::NoiseGenerator> m_noiseGenerator;
+  core::UniquePtr<gw::WorldGenerator> m_worldGenerator;
+
 };
 
 

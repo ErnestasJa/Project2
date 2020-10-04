@@ -8,14 +8,23 @@ public:
   core::Vector<uint32_t> Indices;
   core::Vector<glm::vec3> Vertices;
   core::Vector<glm::vec3> UVs;
+  core::Vector<glm::vec3> Normals;
 
 public:
   VoxelMesh(core::UniquePtr<render::IGpuBufferArrayObject> vao);
   void Upload();
   void Render();
+
+  void Clear();
+
+  [[nodiscard]] bool IsReady() const {
+    return m_isReady;
+  }
+
   ~VoxelMesh();
 protected:
   core::UniquePtr<render::IGpuBufferArrayObject> m_vao;
+  bool m_isReady;
 };
 }
 

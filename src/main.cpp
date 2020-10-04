@@ -8,7 +8,7 @@ int main() {
   wDef.Dimensions = {1920, 1080};
   wDef.Title = "TheProject2";
   wDef.Fullscreen = false;
-  wDef.DebugContext = true;
+  wDef.DebugContext = false;
 
   if(game::CGame::Initialize(wDef) == false){
     return -1;
@@ -18,7 +18,6 @@ int main() {
 
   auto stateManager = Game->GetGameStateManager();
   auto startingState = game::state::GameState::Create();
-  //auto startingState = core::MakeUnique<game::state::AnimationPreviewState>();
   auto startingStateName = startingState->GetName();
 
   stateManager->Register(core::Move(startingState), startingStateName);

@@ -92,6 +92,7 @@ bool CollisionManager::CheckCollision(
 
 bool CollisionManager::CheckCollisionB(
     const core::AxisAlignedBoundingBox &aabb) {
+  return false;
   core::Vector<VoxNode> &m_nodes = m_octree->GetNodes();
 
   auto clamp = [](float &x) {
@@ -132,6 +133,7 @@ BroadphaseAABB(const core::AxisAlignedBoundingBox &box, const glm::vec3 &vel) {
 core::Vector<AABBCollisionInfo>
 CollisionManager::CheckCollisionSwept(const core::AxisAlignedBoundingBox &aabb,
                                       const glm::vec3 &vel) {
+  return core::Vector<AABBCollisionInfo>();
   /*auto printAABB = [](const std::string & name, const AABB & bb)
   {
       glm::vec3 mi = bb.GetMin(),

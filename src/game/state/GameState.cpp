@@ -1,7 +1,6 @@
 #include "GameState.h"
 #include "game/Game.h"
 #include <glm/gtx/matrix_decompose.hpp>
-#include "util/Noise.h"
 #include "util/noise/NoiseGenerator.h"
 
 #include "gui/IGui.h"
@@ -10,7 +9,6 @@
 #include "render/debug/DebugRenderer.h"
 #include "util/thread/Sleep.h"
 #include "voxel/VoxelInc.h"
-#include "voxel/map/RandomMapGenerator.h"
 
 namespace game::state {
 static core::pod::Vec3 G_WorldSize(32, 16, 32);
@@ -23,7 +21,7 @@ bool GameState::Initialize() {
 
   m_camera = core::MakeShared<render::OrbitCamera>();
   m_camera->SetPosition({128, 150, 128});
-  m_camera->SetRotation({80, 0, 0});
+  m_camera->SetRotation({0, -89, 0});
   m_camera->SetDistance(6);
   m_camera->SetFOV(35);
 
@@ -31,9 +29,10 @@ bool GameState::Initialize() {
   m_inputHandlerHandle =
       Game->GetWindow()->GetInputDevice()->AddInputHandler(this);
 
+  m_world = core::MakeUnique<gw::World>();
   m_octree = core::MakeShared<vox::MortonOctree>();
-  m_meshManager =
-      core::MakeUnique<vox::VoxMeshManager>(Game->GetRenderer(), m_octree);
+  m_worldRenderer =
+      core::MakeUnique<vox::WorldRenderer>(Game->GetRenderer(), m_world.get(), 512);
   m_collisionManager = core::MakeUnique<vox::CollisionManager>(m_octree);
 
   m_playerActor = core::Move(Game->GetResourceManager()->LoadAssimp(
@@ -41,30 +40,25 @@ bool GameState::Initialize() {
   m_weaponActor = Game->GetResourceManager()->LoadAssimp(
       "pickaxe.fbx", "mc_gear.png", "phong");
 
-  m_worldAtlas = Game->GetImageLoader()->LoadAtlasAs2DTexture(
-      io::Path("resources/textures/block_atlas.png"), 48);
-
-  m_worldMaterial =
-      Game->GetResourceManager()->LoadMaterial("resources/shaders/voxel");
-  m_worldMaterial->SetTexture(0, m_worldAtlas.get());
-  vox::map::RandomMapGenerator mapGen(
-      {G_WorldSize.x, G_WorldSize.y, G_WorldSize.z});
-
-  mapGen.Generate(m_octree.get());
-  m_meshManager->GenAllChunks();
-
   m_debugRenderer = core::MakeUnique<render::DebugRenderer>(
       460, Game->GetRenderer(), Game->GetResourceManager());
 
   m_player = core::MakeUnique<game::Player>(
       m_debugRenderer.get(), m_playerActor, m_camera, m_collisionManager.get(),
-      glm::vec3{G_WorldSize.x / 2, G_WorldSize.y, G_WorldSize.z / 2});
+      glm::vec3{G_WorldSize.x / 2, 1000, G_WorldSize.z / 2});
 
   m_noiseImage = core::MakeUnique<render::Image>(
       core::pod::Vec2<uint32_t>{512, 512}, render::ImageFormat::RGB);
   m_noiseTexture = Game->GetRenderer()->CreateTexture(render::TextureDescriptor(
       m_noiseImage->GetSize().x, m_noiseImage->GetSize().y, render::TextureDataFormat::RGB));
   m_noiseGenerator = core::MakeUnique<util::noise::NoiseGenerator>(core::pod::Vec3<int32_t>(m_noiseImage->GetSize().x, m_noiseImage->GetSize().y,1));
+
+
+  m_worldGenerator = core::MakeUnique<gw::WorldGenerator>(glm::ivec3(4, 4, 4));
+  m_worldGenerator->AddLayer("test");
+  m_worldGenerator->Generate(m_world.get());
+  m_worldRenderer->SetPlayerOriginInWorld(m_player->GetPosition());
+  m_worldRenderer->GenerateVisibleChunks();
 
   GenerateNoiseImage();
   return true;
@@ -76,7 +70,6 @@ core::String GameState::GetName() { return "Game"; }
 
 void GameState::GenerateNoiseImage() {
   auto size = m_noiseImage->GetSize();
-  //siv::PerlinNoise n(m_timer.SecondsSinceEpoch());
 
   m_noiseGenerator->GenSimplex();
   for (uint32_t x = 0; x < size.x; x++) {
@@ -104,23 +97,28 @@ void GameState::RenderGui(float deltaSeconds) {
     m_player->SetFlyEnabled(fly);
   }
 
+  int fov = m_camera->GetFOV() * 2;
+  if(ImGui::SliderInt("FOV", &fov, 50, 100)){
+    m_camera->SetFOV(fov/2.0);
+  }
+
   ImGui::End();
 
   ImGui::Begin("Noise gen");
 
-  bool seedChanged = ImGui::SliderInt("Seed", &seed, 0, 9999);
-  if(seedChanged){
-    m_noiseGenerator->Reseed(m_timer.SecondsSinceEpoch());
-  }
+
+
 
   settingsChanged =
-  ImGui::SliderFloat("Min val", &noiseSettings.Min, 0, 1) |
-  ImGui::SliderFloat("Max val", &noiseSettings.Max, 0, 1) |
-  ImGui::SliderFloat("Offset", &noiseSettings.Offset, -1, 1) |
-  ImGui::SliderFloat("Fractal gain", &noiseSettings.FractalGain, 0, 1) |
-  ImGui::SliderFloat("Fractal lacunarity", &noiseSettings.FractalLacunarity, 0, 5) |
-  ImGui::SliderInt("Fractal octaves", &noiseSettings.FractalOctaves, 1, 15) |
-  ImGui::SliderFloat("Frequency", &noiseSettings.Frequency, 0.0001, 0.1);
+    ImGui::SliderInt("Seed", &noiseSettings.Seed, 0, 9999) |
+    ImGui::SliderFloat("Min val", &noiseSettings.Min, 0, 1) |
+    ImGui::SliderFloat("Max val", &noiseSettings.Max, 0, 1) |
+    ImGui::SliderFloat("Offset", &noiseSettings.Offset, -1, 1) |
+    ImGui::SliderFloat("Fractal gain", &noiseSettings.FractalGain, 0, 1) |
+    ImGui::SliderFloat("Fractal lacunarity", &noiseSettings.FractalLacunarity, 0, 5) |
+    ImGui::SliderInt("Fractal octaves", &noiseSettings.FractalOctaves, 1, 15) |
+    ImGui::SliderFloat("Frequency", &noiseSettings.Frequency, 0.0001, 0.1) |
+    ImGui::DragInt3("Light position", &noiseSettings.Translation.x, 25);
 
   if(ImGui::Button("Reset")){
     noiseSettings = util::noise::NoiseGeneratorSettings();
@@ -130,7 +128,7 @@ void GameState::RenderGui(float deltaSeconds) {
 
   m_noiseGenerator->SetNoiseGenSettings(noiseSettings);
 
-  if (settingsChanged || seedChanged) {
+  if (settingsChanged) {
     GenerateNoiseImage();
   }
 
@@ -140,21 +138,13 @@ void GameState::RenderGui(float deltaSeconds) {
 
   ImGui::End();
 
+  m_worldRenderer->RenderWorldGui();
+
   Game->GetGui()->EndRender();
 }
 
 void GameState::RenderWorld() {
-  m_worldMaterial->Use();
-  m_worldMaterial->SetMat4("MVP", m_camera->GetProjection() *
-                                      m_camera->GetView() * glm::mat4(1));
-
-  Game->GetRenderer()->GetRenderContext()->SetDepthTest(
-      m_worldMaterial->UseDepthTest);
-  Game->GetRenderer()->SetActiveTextures(m_worldMaterial->GetTextures());
-
-  for (auto chunk : m_meshManager->GetMeshes()) {
-    chunk.second->Render();
-  }
+  m_worldRenderer->RenderAllMeshes();
 }
 
 void GameState::RenderPlayer(float deltaSeconds) {
@@ -182,8 +172,11 @@ bool GameState::Run() {
   Game->GetRenderer()->BeginFrame();
   Game->GetRenderer()->Clear();
 
-  auto secondsElapsed = m_timer.SecondsElapsed();
-  auto milisecondsElapsed = m_timer.MilisecondsElapsed();
+  auto microSecondsElapsed = m_timer.MicrosecondsElapsed();
+  auto milisecondsElapsed = microSecondsElapsed / 1000.f;
+  auto secondsElapsed = milisecondsElapsed / 1000.f;
+
+  m_worldRenderer->Update(microSecondsElapsed);
   m_timer.Start();
 
   m_debugRenderer->Update(milisecondsElapsed);
@@ -196,13 +189,7 @@ bool GameState::Run() {
   m_debugRenderer->Render();
   RenderGui(secondsElapsed);
 
-  if (Game->GetRenderer()->GetDebugMessageMonitor()->isDebuggingEnabled()) {
-    for (auto msg :
-         Game->GetRenderer()->GetDebugMessageMonitor()->GetMessages()) {
-      elog::LogInfo(msg->AsString());
-    }
-    Game->GetRenderer()->GetDebugMessageMonitor()->ClearMessages();
-  }
+
 
   int32_t frameSleepMicroSeconds = 10000 - timer.MicrosecondsElapsed();
 
@@ -250,20 +237,12 @@ void GameState::HandleKeyInput(float deltaSeconds) {
     strafeVelocity.z = -right.z;
   }
 
-  if (IsKeyDown(input::Keys::O)) {
-    m_camera->SetFOV(m_camera->GetFOV() - 1);
-    elog::LogInfo(core::string::format("FOV: {}", m_camera->GetFOV()));
-  } else if (IsKeyDown(input::Keys::P)) {
-    m_camera->SetFOV(m_camera->GetFOV() + 1);
-    elog::LogInfo(core::string::format("FOV: {}", m_camera->GetFOV()));
-  }
-
   bool anyDirectionKeyPressed = wk | ak | sk | dk;
 
   if (anyDirectionKeyPressed) {
     auto sum = forwardVelocity + strafeVelocity;
     auto direction = glm::normalize(sum);
-    auto totalVelocity = direction * (supaSpeed ? 10.0f : 5.0f);
+    auto totalVelocity = direction * (supaSpeed ? 100.0f : 5.0f);
 
     m_player->GetVelocity().x = totalVelocity.x;
     m_player->GetVelocity().z = totalVelocity.z;
@@ -272,8 +251,20 @@ void GameState::HandleKeyInput(float deltaSeconds) {
     m_player->GetVelocity().z = 0;
   }
 
-  if (IsKeyDown(input::Keys::SPACE)) {
-    m_player->Jump(150);
+  if(m_player->GetFlyEnabled()){
+    if(IsKeyDown(input::Keys::SPACE)) {
+      m_player->GetVelocity().y = 100;
+    }
+    else if(IsKeyDown(input::Keys::L_CTRL)){
+      m_player->GetVelocity().y = -100;
+    }
+    else{
+      m_player->GetVelocity().y = 0;
+    }
+  }else {
+    if (IsKeyDown(input::Keys::SPACE)) {
+      m_player->Jump(150);
+    }
   }
 
   if (IsMouseButtonDown(input::MouseButtons::Left)) {
@@ -297,6 +288,16 @@ core::tuple<glm::vec3, glm::vec3> GameState::GetPlayerAimDirection() {
 }
 
 bool GameState::OnMouseMoveDelta(const int32_t x, const int32_t y) {
+
+  auto cursorMode =
+      Game->GetWindow()->GetCursorMode() == render::CursorMode::Normal
+      ? render::CursorMode::HiddenCapture
+      : render::CursorMode::Normal;
+
+  if(cursorMode != render::CursorMode::Normal){
+    return true;
+  }
+
   auto rot = m_camera->GetRotation();
   float mouseSpeed = 0.01;
   rot.x -= x * mouseSpeed;
@@ -323,7 +324,7 @@ bool GameState::OnMouseUp(const input::MouseButton &key) {
                                        end.z));
     m_debugRenderer->AddLine(start, start + dir, 5);
 
-    auto ci = vox::CollisionInfo(start, dir);
+    /*auto ci = vox::CollisionInfo(start, dir);
     m_collisionManager->Collide(ci);
 
     if (ci.HasCollided()) {
@@ -336,8 +337,8 @@ bool GameState::OnMouseUp(const input::MouseButton &key) {
       m_octree->RemoveNode(nodeX, nodeY, nodeZ);
 
       uint32_t chunk = vox::utils::GetChunk(ci.node.start);
-      m_meshManager->RebuildChunk(chunk);
-    }
+      m_worldRenderer->SetChunkDirty(chunk);
+    }*/
   }
 
   return GameInputHandler::OnMouseUp(key);

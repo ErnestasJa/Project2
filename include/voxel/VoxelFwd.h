@@ -4,7 +4,7 @@
 namespace vox {
 class MortonOctree;
 class VoxelMesh;
-class VoxMeshManager;
+class WorldRenderer;
 class CollisionManager;
 struct CollisionInfo;
 struct AABBCollisionInfo;
@@ -12,7 +12,7 @@ struct MaskNode;
 struct VoxNode;
 
 namespace map {
-class RandomMapGenerator;
+class WorldGenerator;
 }
 
 }
