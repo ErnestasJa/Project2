@@ -54,7 +54,7 @@ bool GameState::Initialize() {
   m_noiseGenerator = core::MakeUnique<util::noise::NoiseGenerator>(core::pod::Vec3<int32_t>(m_noiseImage->GetSize().x, m_noiseImage->GetSize().y,1));
 
 
-  m_worldGenerator = core::MakeUnique<gw::WorldGenerator>(glm::ivec3(4, 4, 4));
+  m_worldGenerator = core::MakeUnique<gw::WorldGenerator>(glm::ivec3(2, 2, 2));
   m_worldGenerator->AddLayer("test");
   m_worldGenerator->Generate(m_world.get());
   m_worldRenderer->SetPlayerOriginInWorld(m_player->GetPosition());

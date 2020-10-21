@@ -7,7 +7,7 @@ game::CGame * Game = nullptr;
 namespace game {
 bool CGame::Initialize(const render::SWindowDefinition &def) {
   auto appPath = platform::GetPlatformFileSystem()->GetExecutableDirectory();
-  appPath = appPath.GetParentDirectory(); // for dev builds
+  appPath = appPath.GetParentDirectory().GetParentDirectory(); // for dev builds
 
 #ifdef MSVC_COMPILE
   appPath = appPath.GetParentDirectory();
@@ -20,6 +20,12 @@ bool CGame::Initialize(const render::SWindowDefinition &def) {
 
   Game->m_coutLogPipe = core::MakeShared<elog::DefaultCoutLogPipe>();
   elog::AddLogStream(Game->m_coutLogPipe);
+
+  if(!Game->m_fileSystem->DirectoryExists(io::Path("resources"))){
+    const auto& searchPath = appPath.AsString();
+    elog::LogInfo(core::string::format("Could not find resource directory, current search path: <{}>", searchPath.c_str()));
+    return false;
+  }
 
   Game->m_engineContext = engine::CreateContext(def);
   Game->m_renderer = Game->m_engineContext->GetRenderer();

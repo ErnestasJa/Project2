@@ -1,7 +1,7 @@
 #ifndef ANIMATIONPREVIEWSTATE_H
 #define ANIMATIONPREVIEWSTATE_H
 
-#include "IGameState.h"
+#include "game/state/IGameState.h"
 #include "resource_management/mesh/MBDBone.h"
 #include <Input/GameInputHandler.h>
 #include <game/Player.h>

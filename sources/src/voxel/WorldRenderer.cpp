@@ -55,11 +55,51 @@ void WorldRenderer::BuildChunk(
   vox::MortonOctree *chunk = std::get<1>(chunkData);
   auto &nodes = chunk->GetNodes();
 
-  if (nodes.size() == 0) {
+  if (nodes.empty()) {
     return;
   }
 
-  auto firstVoxelInChunk = nodes.begin();
+  /*int32_t index = 0;
+  auto currentChunk = vox::utils::GetChunk(nodes[0].start);
+  auto chunkStartIndex = 0;
+
+  vox::VoxNode extraNode(0, 0);
+
+  while(true){
+    const auto& currentNode = nodes[index];
+    auto currentNodeChunkStart = vox::utils::GetChunk(currentNode.start);
+    auto currentNodeChunkEnd = vox::utils::GetNodeEndChunk(currentNode);
+
+    if(currentNodeChunkStart != currentChunk){
+      const auto & firstVoxelIt = nodes.begin() + chunkStartIndex;
+      const auto & lastVoxelIt = nodes.begin() + (index-1);
+
+      uint32_t firstVoxelChunk = vox::utils::GetChunk(firstVoxelIt->start);
+      uint32_t lastVoxelChunk = vox::utils::GetChunk(lastVoxelIt->start + lastVoxelIt->size-1);
+
+      auto [cx, cy, cz] = vox::utils::Decode(firstVoxelChunk);
+
+      glm::ivec3 chunkOffset(cx, cy, cz);
+
+      auto renderableChunkOffset = glm::ivec3(superChunkOffset + chunkOffset);
+      auto existingSubChunkIt = GetSubChunk(firstVoxelChunk, renderableChunkOffset);
+      auto &worldSubChunk = std::get<1>(existingSubChunkIt);
+
+      core::Vector<vox::VoxNode> chunkNodes(firstVoxelIt, lastVoxelIt);
+
+      m_backgroundMesher.EnqueueBackgroundJob(new MesherBackgroundJob(
+          worldSubChunk, core::Move(chunkNodes)));
+
+
+    }
+
+    index++;
+    if(index == nodes.size()){
+      break;
+    }
+  }*/
+
+  auto firstVoxelInChunkIt = nodes.begin();
   auto chunkStartMK = vox::utils::GetChunk(nodes.begin()->start);
 
   while (true) {
@@ -67,44 +107,52 @@ void WorldRenderer::BuildChunk(
 
     auto searchVoxNode = vox::VoxNode(nextChunkMk);
     auto nextChunkIt =
-        std::upper_bound(nodes.begin(), nodes.end(), searchVoxNode,
+        std::upper_bound(firstVoxelInChunkIt, nodes.end(), searchVoxNode,
                          [](const vox::VoxNode &a, const vox::VoxNode &b) {
                            return (a.start & CHUNK_MASK) <= b.start;
                          });
 
-    decltype(nextChunkIt) lastVoxelInChunk = nextChunkIt - 1;
+    auto lastVoxelInChunkIt = nextChunkIt - 1;
 
-    // elog::LogInfo(core::string::format("start mk <{}>, end mk <{}>",
-    // chunkStartMK, nextChunkMK));
+    auto worldSubChunk = GetSubChunk(chunkStartMK, superChunkOffset);
+    auto lastVoxelEndChunkMk = vox::utils::GetChunk(lastVoxelInChunkIt->start + lastVoxelInChunkIt->size);
+    auto numNodes = std::distance(firstVoxelInChunkIt, lastVoxelInChunkIt);
 
-    auto [cx, cy, cz] = vox::utils::Decode(chunkStartMK);
-
-    glm::ivec3 chunkOffset(cx, cy, cz);
-    auto renderableChunkOffset = glm::ivec3(superChunkOffset + chunkOffset);
-
-    auto existingSubChunkIt = GetSubChunk(renderableChunkOffset);
-
-    auto &worldSubChunk = std::get<1>(existingSubChunkIt);
-
-    auto numVoxels = std::distance(firstVoxelInChunk, lastVoxelInChunk);
-    if (worldSubChunk->m_isDirty && worldSubChunk->m_isGenerating == false && numVoxels > 0) {
+    if (worldSubChunk->m_isDirty && worldSubChunk->m_isGenerating == false && numNodes > 0) {
       worldSubChunk->m_isGenerating = true;
 
-      m_backgroundMesher.EnqueueBackgroundJob(new MesherBackgroundJob(
-          worldSubChunk, firstVoxelInChunk, lastVoxelInChunk));
+      //TODO: if last node in chunk overflows change size to fit in current chunk.
 
-      elog::LogInfo(
-          core::string::format("Generated chunk: [{},{},{}], offset: [{},{},{}], numVoxels: <{}>",
-                               renderableChunkOffset.x, renderableChunkOffset.y,
-                               renderableChunkOffset.z,
-                               chunkOffset.x, chunkOffset.y, chunkOffset.z,
-                               numVoxels));
+      core::Vector<vox::VoxNode> chunkNodes(firstVoxelInChunkIt, lastVoxelInChunkIt);
+      if(chunkStartMK != lastVoxelEndChunkMk) {
+        auto& lastNode = chunkNodes[chunkNodes.size()-1];
+
+      }
+
+      m_backgroundMesher.EnqueueBackgroundJob(new MesherBackgroundJob(
+          worldSubChunk, firstVoxelInChunkIt, lastVoxelInChunkIt));
+    }
+
+    if(chunkStartMK != lastVoxelEndChunkMk){
+      auto nextChunkMK = vox::utils::NextChunk(chunkStartMK);
+
+      while(lastVoxelEndChunkMk != nextChunkMK){
+        auto subChunk = GetSubChunk(nextChunkMK, superChunkOffset);
+        core::Vector<vox::VoxNode> chunkNodes = { vox::VoxNode(nextChunkMK, vox::utils::NextChunk(nextChunkMK)-1) };
+
+        m_backgroundMesher.EnqueueBackgroundJob(new MesherBackgroundJob(
+            subChunk, core::Move(chunkNodes)));
+
+        nextChunkMK = vox::utils::NextChunk(chunkStartMK);
+      }
+
+      //TODO: deal with the leftover voxel
     }
 
     if (nextChunkIt == nodes.end()) {
       break;
     } else {
-      firstVoxelInChunk = nextChunkIt;
+      firstVoxelInChunkIt = nextChunkIt;
       chunkStartMK = vox::utils::GetChunk(nextChunkIt->start);
     }
   }
@@ -183,6 +231,29 @@ void WorldRenderer::SetChunkDirty(glm::ivec3 subchunkGlobalOffset) {
   if (it != m_map.end()) {
     it->second.m_isDirty = true;
   }
+}
+
+WorldSubChunk* WorldRenderer::GetSubChunk(uint32_t chunkMK, glm::ivec3 worldChunkOffset){
+  auto [cx, cy, cz] = vox::utils::Decode(chunkMK);
+  auto pos = worldChunkOffset + glm::ivec3(cx,cy,cz);
+  auto existingSubChunkIt = m_map.find(pos);
+
+  if(existingSubChunkIt == m_map.end()){
+    auto chunkPos = glm::ivec3(pos.x % gw::World::SuperChunkSize, pos.y % gw::World::SuperChunkSize, pos.z % gw::World::SuperChunkSize);
+
+    auto mesh = CreateEmptyMesh();
+    auto mesh2 = CreateEmptyMesh();
+    auto emplaceResult = m_map.emplace(std::piecewise_construct,
+                                       std::forward_as_tuple(pos),
+                                       std::forward_as_tuple(chunkMK, chunkPos, core::Move(mesh), core::Move(mesh2)));
+
+    ASSERT(emplaceResult.second, "Failed to insert chunk");
+
+    existingSubChunkIt = emplaceResult.first;
+    existingSubChunkIt->second.m_isDirty = true;
+  }
+
+  return &existingSubChunkIt->second;
 }
 
 } // namespace vox

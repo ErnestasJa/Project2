@@ -4,3 +4,7 @@
 /bin
 /resources/models/ProjectSteve.blend?
 /resources/models/ProjectSteve.blend??
+
+cmake-build-debug-coverage/
+
+TraceWorldGen.json

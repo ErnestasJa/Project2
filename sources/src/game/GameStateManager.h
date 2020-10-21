@@ -1,7 +1,7 @@
 #ifndef THEPROJECT2_GAMESTATEMANAGER_H
 #define THEPROJECT2_GAMESTATEMANAGER_H
 
-#include "state/IGameState.h"
+#include "game/state/IGameState.h"
 
 namespace game {
     class GameStateManager {

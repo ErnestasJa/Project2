@@ -1,8 +1,8 @@
 #ifndef THEPROJECT2_SRC_GAME_STATE_GAMESTATE_H_
 #define THEPROJECT2_SRC_GAME_STATE_GAMESTATE_H_
 
-#include "IGameState.h"
 #include "game/GameFwd.h"
+#include "game/state/IGameState.h"
 #include "render/RenderFwd.h"
 #include "util/noise/NoiseGenerator.h"
 #include "voxel/VoxelFwd.h"

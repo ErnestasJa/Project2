@@ -1,6 +1,7 @@
 #include "game/Game.h"
 #include "game/state/AnimationPreviewState.h"
 #include "game/state/GameState.h"
+#include "game/state/voxtest/VoxTestState.h"
 
 int main() {
 
@@ -18,6 +19,7 @@ int main() {
 
   auto stateManager = Game->GetGameStateManager();
   auto startingState = game::state::GameState::Create();
+  //auto startingState = core::MakeUnique<game::state::VoxTest>();
   auto startingStateName = startingState->GetName();
 
   stateManager->Register(core::Move(startingState), startingStateName);

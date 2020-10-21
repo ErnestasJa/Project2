@@ -15,13 +15,13 @@ VoxNode::VoxNode(VoxNode &&n) noexcept
     return *this;
 }*/
 
-VoxNode::VoxNode(uint32_t x, uint32_t y, uint32_t z, uint8_t nodeSize) {
+VoxNode::VoxNode(uint32_t x, uint32_t y, uint32_t z, uint32_t nodeSize) {
   start = encodeMK(x, y, z);
   size = nodeSize;
   r = g = b = 255;
 }
 
-VoxNode::VoxNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint8_t> color, uint8_t nodeSize){
+VoxNode::VoxNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint8_t> color, uint32_t nodeSize){
   start = encodeMK(pos.x, pos.y, pos.z);
   r = color.r;
   g = color.g;
@@ -29,7 +29,7 @@ VoxNode::VoxNode(core::pod::Vec3<uint32_t> pos, core::pod::Vec3<uint8_t> color, 
   size = nodeSize;
 }
 
-VoxNode::VoxNode(uint32_t morton, uint8_t nodeSize, uint8_t red, uint8_t green,
+VoxNode::VoxNode(uint32_t morton, uint32_t nodeSize, uint8_t red, uint8_t green,
              uint8_t blue) {
   start = morton;
   size = nodeSize;
@@ -38,7 +38,7 @@ VoxNode::VoxNode(uint32_t morton, uint8_t nodeSize, uint8_t red, uint8_t green,
   b = blue;
 }
 
-VoxNode::VoxNode(uint32_t morton, uint8_t nodeSize) {
+VoxNode::VoxNode(uint32_t morton, uint32_t nodeSize) {
   start = morton;
   size = nodeSize;
   r = g = b = 255;

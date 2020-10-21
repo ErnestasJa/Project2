@@ -15,16 +15,16 @@ WorldGenerator::WorldGenerator(glm::ivec3 halfSizeInChunks, uint32_t seed)
     : m_halfSize(halfSizeInChunks), m_size(halfSizeInChunks * 2), m_seed(seed),
       m_noiseLayerSize(128, 128, 1), m_noiseLayerUID(0) {}
 
-template <class TNumber> core::pod::Vec3<uint8_t> GetTexture(TNumber x) {
+template <class TNumber> uint8_t GetTexture(TNumber x) {
   static_assert(std::is_same<TNumber, double>::value,
                 "Passed number must be of type double.");
 
   if (x < 0.3333) {
-    return core::pod::Vec3<uint8_t>(204, 3, 2);
+    return 204;
   } else if (x < 0.6666) {
-    return core::pod::Vec3<uint8_t>(1, 1, 1);
+    return 1;
   } else {
-    return core::pod::Vec3<uint8_t>(8, 8, 8);
+    return 8;
   }
 };
 
@@ -79,7 +79,7 @@ void WorldGenerator::Generate(World *world) {
       profiler.Stop();
 
       profiler.Start("Add nodes to octree");
-      for (int32_t localChunkZ = 0; localChunkZ < World::SuperChunkSize;
+      /*for (int32_t localChunkZ = 0; localChunkZ < World::SuperChunkSize;
            localChunkZ++) {
         for (int32_t localChunkX = 0; localChunkX < World::SuperChunkSize;
              localChunkX++) {
@@ -94,7 +94,39 @@ void WorldGenerator::Generate(World *world) {
             totalNodesAdded++;
           }
         }
+      }*/
+      const uint32_t maxNode = vox::utils::Encode(128,128,128);
+      int32_t start = -1, end = -1;
+      uint8_t texture;
+
+      for(int32_t i = 0; i < maxNode; i++){
+        auto [x,y,z] = vox::utils::Decode(i);
+        auto nval =
+            (int)nl.NoiseGenerator->GetNoise(x, z, 0);
+
+        if(y <= nval){
+          auto t = GetTexture(y / 256.0);
+
+          if(start == -1){
+            start = i;
+            texture = t;
+            continue;
+          }
+          else if(t != texture){
+            chunk->AddOrphanNode(vox::VoxNode(
+                start, i - start,
+                texture, texture, texture));
+            start = -1;
+          }
+        }
+        else if(start != -1){
+          chunk->AddOrphanNode(vox::VoxNode(
+              start, i - start,
+              texture, texture, texture));
+          start = -1;
+        }
       }
+
       profiler.Stop();
 
       profiler.Start("SortLeafNodes");
