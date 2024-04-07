@@ -5,7 +5,8 @@ set(BINARY_DBG ${CMAKE_PROJECT_NAME}_dbg_run)
 set(LIBRARY ${CMAKE_PROJECT_NAME}_lib)
 
 set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fdelete-null-pointer-checks -Wall -Wno-reorder -Wno-misleading-indentation  -Werror=return-type -std=c++17 -msse4.1 -include EngineInc.h")
-set(CPP_GCC_COMPILE_DBG_FLAGS "${CMAKE_CXX_FLAGS} -g -glldb -O0 -fdelete-null-pointer-checks -Wall -Wno-reorder -Wno-misleading-indentation  -Werror=return-type -std=c++17 -msse4.1 -include EngineInc.h")
+set(CPP_GCC_COMPILE_DBG_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g -fno-omit-frame-pointer -glldb -fdelete-null-pointer-checks -Wall -Wno-reorder -Wno-misleading-indentation -Werror=return-type -std=c++17 -msse4.1 -include EngineInc.h")
+
 #set(CPP_GCC_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -g -fdelete-null-pointer-checks -Wno-reorder -Wno-misleading-indentation -Wall -Werror=return-type -std=c++17 -include EngineInc.h")
 
 #set(CPP_NMAKE_COMPILE_FLAGS  "${CMAKE_CXX_FLAGS} /Gm- /std:c++latest /MP /O2 /W3 /FIEngineInc.h")
@@ -29,7 +30,7 @@ file(GLOB_RECURSE PROJECT_INCLUDES
         "${SRC_PATH}/*.hpp"
         "${SRC_PATH}/*.h"
         "${SRC_PATH}/*.hpp"
-        )
+)
 
 set(PROJECT_SOURCES
         "${SRC_PATH}/voxel/VoxelSide.cpp"
@@ -56,28 +57,41 @@ set(PROJECT_SOURCES
         src/utils/thread/Sleep.cpp src/voxel/ChunkMesher.cpp include/util/MultiDimArrayIndex.h src/game/state/voxtest/VoxTestState.cpp)
 
 
-include_directories (${INCLUDE_PATH})
-include_directories ("libs/TheEngine2/include")
-include_directories ("libs/TheEngine2/third_party/glm")
-include_directories ("libs/TheEngine2/third_party/imgui/imgui")
-include_directories ("libs/FastNoiseSIMD")
+include_directories(${INCLUDE_PATH})
+include_directories("libs/TheEngine2/include")
+include_directories("libs/TheEngine2/third_party/glm")
+include_directories("libs/TheEngine2/third_party/imgui/imgui")
+include_directories("libs/FastNoise2")
 
-add_subdirectory (libs/TheEngine2)
-add_subdirectory (libs/FastNoiseSIMD)
-
+add_subdirectory(libs/TheEngine2)
+add_subdirectory(libs/FastNoise2)
 
 
 add_executable(${BINARY} "${SRC_PATH}/main.cpp" ${PROJECT_SOURCES})
 set_target_properties(${BINARY} PROPERTIES COMPILE_FLAGS "${CPP_GCC_COMPILE_FLAGS}")
-target_link_libraries(${BINARY} engine FastNoise)
-add_dependencies(${BINARY} engine FastNoise)
+target_link_libraries(${BINARY} engine FastNoise2)
+add_dependencies(${BINARY} engine FastNoise2)
 
 add_executable(${BINARY_DBG} "${SRC_PATH}/main.cpp" ${PROJECT_SOURCES})
 set_target_properties(${BINARY_DBG} PROPERTIES COMPILE_FLAGS "${CPP_GCC_COMPILE_DBG_FLAGS}")
-target_link_libraries(${BINARY_DBG} engine FastNoise)
-add_dependencies(${BINARY_DBG} engine FastNoise)
+target_link_libraries(${BINARY_DBG} engine FastNoise2)
+add_dependencies(${BINARY_DBG} engine FastNoise2)
+
+# ASan
+#target_compile_options(${BINARY_DBG} PRIVATE -fsanitize=address)
+#target_link_options(${BINARY_DBG} PRIVATE -fsanitize=address)
+# UBSan
+target_compile_options(${BINARY_DBG} PRIVATE -fsanitize=undefined -fsanitize=integer -fsanitize=nullability)
+target_link_options(${BINARY_DBG} PRIVATE -fsanitize=undefined -fsanitize=integer -fsanitize=nullability)
+
+if (UNIX)
+    # MSan
+    target_compile_options(${BINARY_DBG} PRIVATE -fsanitize=memory -fno-optimize-sibling-calls -fPIE -pie -fno-omit-frame-pointer)
+    target_link_options(${BINARY_DBG} PRIVATE -fsanitize=memory -fno-optimize-sibling-calls -fPIE -pie -fno-omit-frame-pointer)
+endif (UNIX)
+
 
 add_library(${LIBRARY} STATIC ${PROJECT_SOURCES})
 set_target_properties(${LIBRARY} PROPERTIES COMPILE_FLAGS "${CPP_GCC_COMPILE_FLAGS}")
-target_link_libraries(${LIBRARY} engine FastNoise)
-add_dependencies(${LIBRARY} engine FastNoise)
+target_link_libraries(${LIBRARY} engine FastNoise2)
+add_dependencies(${LIBRARY} engine FastNoise2)

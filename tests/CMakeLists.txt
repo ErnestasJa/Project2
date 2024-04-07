@@ -17,7 +17,7 @@ add_executable(${BINARY} ${TEST_SOURCES})
 
 add_test(NAME ${BINARY} COMMAND ${BINARY})
 
-target_link_libraries(${BINARY} PUBLIC ${CMAKE_PROJECT_NAME}_lib gtest)
+target_link_libraries(${BINARY} PUBLIC ${CMAKE_PROJECT_NAME}_lib GTest::gtest GTest::gtest_main)
 target_link_libraries(${BINARY} PUBLIC TheProjectMain_lib)
 
 set_target_properties(${BINARY} PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -include EngineInc.h")

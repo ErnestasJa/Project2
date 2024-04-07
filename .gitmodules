@@ -1,6 +1,6 @@
 [submodule "sources/libs/TheEngine2"]
 	path = sources/libs/TheEngine2
 	url = https://github.com/ErnestasJa/TheEngine2.git
-[submodule "sources/libs/FastNoiseSIMD"]
-	path = sources/libs/FastNoiseSIMD
-	url = https://github.com/ErnestasJa/FastNoiseSIMD.git
+[submodule "sources/libs/FastNoise2"]
+	path = sources/libs/FastNoise2
+	url = https://github.com/Auburn/FastNoise2.git

@@ -2,6 +2,9 @@
 #ifndef THEPROJECT2_INCLUDE_VOXEL_VOXELINC_H_
 #define THEPROJECT2_INCLUDE_VOXEL_VOXELINC_H_
 
+//
+#include "VoxelConfig.h"
+//
 #include "CollisionInfo.h"
 #include "CollisionManager.h"
 #include "MNodeUtil.h"

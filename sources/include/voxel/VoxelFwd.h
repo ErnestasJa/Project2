@@ -15,8 +15,9 @@ namespace map {
 class WorldGenerator;
 }
 
-}
+} // namespace vox
 
+#include "VoxelConfig.h"
 #include "VoxelSide.h"
 
 #endif // THEPROJECT2_INCLUDE_VOXEL_VOXELFWD_H_
